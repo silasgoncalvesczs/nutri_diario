@@ -1,14 +1,14 @@
 export default async function handler(req, res) {
-    // 1. Configuração de CORS (Permite que seu GitHub Pages acesse este backend)
+    // 1. Configuração de CORS (Permite que o app no GitHub Pages acesse este backend)
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Em produção, troque '*' pela URL do seu GitHub Pages
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
         'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
     );
 
-    // Trata requisição OPTIONS (preflight do navegador)
+    // Responde rápido ao "preflight" do navegador
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
@@ -25,23 +25,22 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 2. Prompt do Sistema: Ensina a IA como formatar a resposta
+        // 2. Prompt do Sistema: Garante que a IA responda APENAS o JSON numérico
         const systemPrompt = `
-            Você é um nutricionista experiente.
-            Analise os ingredientes fornecidos e retorne APENAS um array JSON.
-            Não use markdown, não use explicações. Apenas o JSON cru.
-            Formato exigido para cada item:
+            Você é um nutricionista técnico. Analise os ingredientes e retorne APENAS um array JSON cru.
+            NÃO use markdown (sem \`\`\`json). NÃO explique nada.
+            Formato obrigatório:
             [
                 {
-                    "name": "Nome do alimento",
-                    "calories": 0 (número),
-                    "protein": 0 (número em gramas),
-                    "carbs": 0 (número em gramas),
-                    "fats": 0 (número em gramas),
-                    "fiber": 0 (número em gramas)
+                    "name": "Nome alimento",
+                    "calories": 0,
+                    "protein": 0,
+                    "carbs": 0,
+                    "fats": 0,
+                    "fiber": 0
                 }
             ]
-            Se não souber a quantidade exata, estime com base em porções médias.
+            Use números (inteiros ou decimais) para os macros. Se for unidade vaga (ex: "1 maçã"), estime a média.
         `;
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -51,12 +50,12 @@ export default async function handler(req, res) {
                 "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini",
+                model: "gpt-4o-mini", // Modelo mais rápido e barato
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: prompt }
                 ],
-                temperature: 0.1 // Baixa temperatura para dados mais consistentes
+                temperature: 0.1
             })
         });
 
@@ -66,7 +65,6 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: data });
         }
 
-        // Retorna o conteúdo da mensagem da IA
         return res.status(200).json(data);
 
     } catch (err) {
