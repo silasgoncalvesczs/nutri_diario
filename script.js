@@ -276,35 +276,65 @@ function saveMeal() {
 }
 
 /* ============================================================
-   DASHBOARD (HOME) E HISTÓRICO
+   DASHBOARD (HOME) - CORRIGIDO E BLINDADO
    ============================================================ */
 function updateDashboard() {
     const meals = JSON.parse(localStorage.getItem("meals") || "[]");
     
-    // Filtra refeições de hoje (comparando dia/mês/ano)
+    // Define a data de hoje
     const todayStr = new Date().toLocaleDateString("pt-BR");
+
+    // Filtra apenas refeições de hoje com segurança
     const todaysMeals = meals.filter(m => {
-        const mealDate = new Date(m.timestamp || Date.now()).toLocaleDateString("pt-BR");
-        return mealDate === todayStr;
+        // Se não tiver timestamp (dados antigos), usa a data atual para não quebrar
+        const dateToCheck = m.timestamp ? new Date(m.timestamp) : new Date();
+        return dateToCheck.toLocaleDateString("pt-BR") === todayStr;
     });
 
     let dailyTotals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
 
+    // Soma os valores convertendo explicitamente para Number (evita erro de texto)
     todaysMeals.forEach(m => {
-        dailyTotals.calories += m.totals.calories;
-        dailyTotals.protein += m.totals.protein;
-        dailyTotals.carbs += m.totals.carbs;
-        dailyTotals.fats += m.totals.fats;
-        dailyTotals.fiber += m.totals.fiber;
+        if (m.totals) {
+            dailyTotals.calories += Number(m.totals.calories) || 0;
+            dailyTotals.protein += Number(m.totals.protein) || 0;
+            dailyTotals.carbs += Number(m.totals.carbs) || 0;
+            dailyTotals.fats += Number(m.totals.fats) || 0;
+            dailyTotals.fiber += Number(m.totals.fiber) || 0;
+        }
     });
 
-    // Metas (pode vir do localStorage no futuro)
+    // Carrega as metas (ou usa padrão se não existir)
     const goals = getGoals();
 
-    // Atualiza Números na tela Home
+    // --- Atualiza a Interface (DOM) ---
+
+    // 1. Calorias e Barra de Progresso
     animateValue("dashboard-cals", dailyTotals.calories);
     document.getElementById("dashboard-goal").innerText = goals.calories;
 
+    // Cálculo da porcentagem (proteção contra divisão por zero)
+    let percent = 0;
+    if (goals.calories > 0) {
+        percent = (dailyTotals.calories / goals.calories) * 100;
+    }
+    // Trava em 100% visualmente para a barra não estourar a tela
+    const visualPercent = Math.min(percent, 100);
+    
+    document.getElementById("progress-bar-cals").style.width = `${visualPercent}%`;
+    document.getElementById("dashboard-percent").innerText = `${Math.round(percent)}%`; // Mostra o real (ex: 120%)
+
+    // Muda cor da barra se ultrapassar a meta
+    const bar = document.getElementById("progress-bar-cals");
+    if (dailyTotals.calories > goals.calories) {
+        bar.classList.remove("bg-primary-500");
+        bar.classList.add("bg-red-500");
+    } else {
+        bar.classList.add("bg-primary-500");
+        bar.classList.remove("bg-red-500");
+    }
+
+    // 2. Macros (Arredondando para inteiros)
     document.getElementById("dashboard-protein").innerText = Math.round(dailyTotals.protein);
     document.getElementById("dashboard-protein-goal").innerText = goals.protein;
 
@@ -316,18 +346,6 @@ function updateDashboard() {
 
     document.getElementById("dashboard-fibers").innerText = Math.round(dailyTotals.fiber);
     document.getElementById("dashboard-fibers-goal").innerText = goals.fibers;
-
-    // Barra de Progresso
-    const percent = Math.min((dailyTotals.calories / goals.calories) * 100, 100);
-    document.getElementById("progress-bar-cals").style.width = `${percent}%`;
-    document.getElementById("dashboard-percent").innerText = `${Math.round(percent)}%`;
-    
-    // Cor da barra muda se passar da meta
-    if (dailyTotals.calories > goals.calories) {
-        document.getElementById("progress-bar-cals").classList.replace("bg-primary-500", "bg-red-500");
-    } else {
-        document.getElementById("progress-bar-cals").classList.replace("bg-red-500", "bg-primary-500");
-    }
 }
 
 function loadHistory() {
