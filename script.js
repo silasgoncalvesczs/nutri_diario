@@ -69,8 +69,20 @@ function navigateTo(target) {
 }
 
 /* ============================================================
-   DASHBOARD (HOME)
+   DASHBOARD (HOME) - COM PROTEÇÃO CONTRA ERROS
    ============================================================ */
+
+// 1. Adicione esta função NOVA auxiliar (ajuda a não travar o app)
+function safeSetText(id, text) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.innerText = text;
+    } else {
+        console.warn(`Aviso: Elemento '${id}' não encontrado no HTML.`);
+    }
+}
+
+// 2. Substitua a função updateDashboard inteira por esta versão segura
 function updateDashboard() {
     const meals = JSON.parse(localStorage.getItem("meals") || "[]");
     const todayStr = new Date().toLocaleDateString("pt-BR");
@@ -84,7 +96,6 @@ function updateDashboard() {
 
     todaysMeals.forEach(m => {
         if (m.totals) {
-            // Usa a função de limpeza segura aqui
             dailyTotals.calories += safeParseFloat(m.totals.calories);
             dailyTotals.protein += safeParseFloat(m.totals.protein);
             dailyTotals.carbs += safeParseFloat(m.totals.carbs);
@@ -95,30 +106,37 @@ function updateDashboard() {
 
     const goals = getGoals();
 
-    // Atualiza HTML
+    // --- Atualiza a Interface com SEGURANÇA (safeSetText) ---
+
+    // Calorias e Metas
     animateValue("dashboard-cals", dailyTotals.calories);
     
-    // Evita divisão por zero visualmente
+    // Usa a função segura ao invés de acessar direto (isso que corrigirá seu erro)
     const goalCalDisplay = goals.calories > 0 ? goals.calories : 2000;
-    document.getElementById("dashboard-goal").innerText = goalCalDisplay;
+    safeSetText("dashboard-goal", goalCalDisplay);
 
-    // Barra de progresso
+    // Barra de Progresso
     let percent = 0;
-    if (goalCalDisplay > 0) percent = (dailyTotals.calories / goalCalDisplay) * 100;
-    
-    const visualPercent = Math.min(percent, 100);
-    document.getElementById("progress-bar-cals").style.width = `${visualPercent}%`;
-    document.getElementById("dashboard-percent").innerText = `${Math.round(percent)}%`;
-
-    // Cor da barra
-    const bar = document.getElementById("progress-bar-cals");
-    if (dailyTotals.calories > goalCalDisplay) {
-        bar.classList.remove("bg-primary-500");
-        bar.classList.add("bg-red-500");
-    } else {
-        bar.classList.add("bg-primary-500");
-        bar.classList.remove("bg-red-500");
+    if (goalCalDisplay > 0) {
+        percent = (dailyTotals.calories / goalCalDisplay) * 100;
     }
+    const visualPercent = Math.min(percent, 100);
+    
+    const progressBar = document.getElementById("progress-bar-cals");
+    if (progressBar) {
+        progressBar.style.width = `${visualPercent}%`;
+        
+        // Lógica de cor da barra
+        if (dailyTotals.calories > goalCalDisplay) {
+            progressBar.classList.remove("bg-primary-500");
+            progressBar.classList.add("bg-red-500");
+        } else {
+            progressBar.classList.add("bg-primary-500");
+            progressBar.classList.remove("bg-red-500");
+        }
+    }
+
+    safeSetText("dashboard-percent", `${Math.round(percent)}%`);
 
     // Macros
     updateMacroCard("dashboard-protein", dailyTotals.protein, goals.protein);
@@ -127,12 +145,13 @@ function updateDashboard() {
     updateMacroCard("dashboard-fibers", dailyTotals.fiber, goals.fibers);
 }
 
+// 3. Atualize também a função updateMacroCard para usar o safeSetText
 function updateMacroCard(elementId, current, goal) {
-    const el = document.getElementById(elementId);
-    const goalEl = document.getElementById(`${elementId}-goal`);
+    safeSetText(elementId, Math.round(current));
     
-    if (el) el.innerText = Math.round(current);
-    if (goalEl) goalEl.innerText = goal > 0 ? goal : '-';
+    // Verifica se existe meta para mostrar
+    const goalText = goal > 0 ? goal : '-';
+    safeSetText(`${elementId}-goal`, goalText);
 }
 
 /* ============================================================
