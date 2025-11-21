@@ -88,7 +88,7 @@ async function calculateNutrition() {
             .map(x => `- ${x.name}: ${x.quantity} ${x.unit}`)
             .join("\n");
 
-        const response = await fetch("https://nutridiario.vercel.app/api/nutrition", {
+        const response = await fetch("https://nutri-diario.vercel.app/api/nutrition", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt: ingredientsText })
