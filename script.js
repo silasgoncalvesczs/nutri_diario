@@ -341,18 +341,25 @@ function clearAllData() {
 }
 
 /* ============================================================
-   GRÁFICO
+   GRÁFICO (ATUALIZADO COM LINHAS DE FUNDO)
    ============================================================ */
 let historyChart = null;
 
 function updateChart(meals) {
     const ctx = document.getElementById('historyChart').getContext('2d');
-    const last7Days = {};
     
+    // Detecta se está em modo escuro para ajustar a cor das linhas
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+    const textColor = isDark ? '#9ca3af' : '#6b7280'; // Cinza mais suave
+
+    // Agrupar por dia (últimos 7 dias)
+    const last7Days = {};
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        last7Days[d.toLocaleDateString("pt-BR").substring(0, 5)] = 0;
+        const dateStr = d.toLocaleDateString("pt-BR").substring(0, 5); // "dd/mm"
+        last7Days[dateStr] = 0;
     }
 
     meals.forEach(m => {
@@ -362,24 +369,69 @@ function updateChart(meals) {
         }
     });
 
-    if (historyChart) historyChart.destroy();
+    const labels = Object.keys(last7Days);
+    const data = Object.values(last7Days);
+
+    if (historyChart) {
+        historyChart.destroy();
+    }
 
     historyChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'bar', // Ou 'line' se preferir linha
         data: {
-            labels: Object.keys(last7Days),
+            labels: labels,
             datasets: [{
                 label: 'Kcal',
-                data: Object.values(last7Days),
+                data: data,
                 backgroundColor: '#8b5cf6',
-                borderRadius: 4
+                borderRadius: 4,
+                barThickness: 20, // Barras um pouco mais finas e elegantes
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { y: { display: false }, x: { grid: { display: false } } },
-            plugins: { legend: { display: false } }
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    grid: { 
+                        display: true, // AQUI: Liga as linhas
+                        color: gridColor, // Cor adaptativa
+                        borderDash: [5, 5], // Linha pontilhada (5px linha, 5px espaço)
+                        drawBorder: false // Remove a linha grossa do eixo esquerda
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 }
+                    }
+                },
+                x: { 
+                    grid: { 
+                        display: false // Mantém vertical limpo
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 }
+                    }
+                }
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? '#374151' : '#fff',
+                    titleColor: isDark ? '#fff' : '#111827',
+                    bodyColor: isDark ? '#d1d5db' : '#4b5563',
+                    borderColor: isDark ? '#4b5563' : '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false, // Remove o quadradinho de cor do tooltip
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' Kcal';
+                        }
+                    }
+                }
+            }
         }
     });
 }
