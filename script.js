@@ -474,9 +474,7 @@ function updateIngredientList() {
 
     list.innerHTML = currentIngredients.map((i, idx) => `
         <li class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span class="dark:text-gray-300">
-                <strong>${i.quantity}${i.unit}</strong> &nbsp; ${i.name}
-            </span>
+            <span class="dark:text-gray-300">${i.quantity}${i.unit} ${i.name}</span>
             <button onclick="removeIngredient(${idx})" class="text-red-400"><i class="fas fa-times"></i></button>
         </li>
     `).join("");
