@@ -11,7 +11,7 @@ let lastCalculatedTotals = null;
 window.addEventListener("DOMContentLoaded", () => {
     initTheme();
     // Garante que existam metas padrão ao abrir
-    ensureDefaultGoals(); 
+    ensureDefaultGoals();
     navigateTo("home");
 });
 
@@ -47,7 +47,7 @@ function safeParseFloat(value) {
     if (!value) return 0;
     if (typeof value === 'number') return value;
     // Remove tudo que não for número ou ponto decimal
-    const clean = value.toString().replace(/[^0-9.]/g, ''); 
+    const clean = value.toString().replace(/[^0-9.]/g, '');
     return parseFloat(clean) || 0;
 }
 
@@ -110,7 +110,7 @@ function updateDashboard() {
 
     // Calorias e Metas
     animateValue("dashboard-cals", dailyTotals.calories);
-    
+
     // Usa a função segura ao invés de acessar direto (isso que corrigirá seu erro)
     const goalCalDisplay = goals.calories > 0 ? goals.calories : 2000;
     safeSetText("dashboard-goal", goalCalDisplay);
@@ -121,11 +121,11 @@ function updateDashboard() {
         percent = (dailyTotals.calories / goalCalDisplay) * 100;
     }
     const visualPercent = Math.min(percent, 100);
-    
+
     const progressBar = document.getElementById("progress-bar-cals");
     if (progressBar) {
         progressBar.style.width = `${visualPercent}%`;
-        
+
         // Lógica de cor da barra
         if (dailyTotals.calories > goalCalDisplay) {
             progressBar.classList.remove("bg-primary-500");
@@ -148,7 +148,7 @@ function updateDashboard() {
 // 3. Atualize também a função updateMacroCard para usar o safeSetText
 function updateMacroCard(elementId, current, goal) {
     safeSetText(elementId, Math.round(current));
-    
+
     // Verifica se existe meta para mostrar
     const goalText = goal > 0 ? goal : '-';
     safeSetText(`${elementId}-goal`, goalText);
@@ -204,7 +204,7 @@ async function calculateNutrition() {
         document.getElementById("res-fibers").innerText = totals.fiber.toFixed(1);
 
         document.getElementById("calc-results").classList.remove("hidden");
-        
+
         // Habilita botão salvar
         const btnSave = document.getElementById("btn-save");
         btnSave.disabled = false;
@@ -238,7 +238,7 @@ function saveMeal() {
 
     localStorage.setItem("meals", JSON.stringify(meals));
     showToast("Salvo!", "success");
-    
+
     clearIngredients();
     navigateTo("home");
 }
@@ -247,7 +247,7 @@ function loadHistory() {
     const meals = JSON.parse(localStorage.getItem("meals") || "[]");
     meals.sort((a, b) => b.timestamp - a.timestamp);
     const container = document.getElementById("history-list");
-    
+
     if (meals.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-400 py-4">Histórico vazio.</p>';
         updateChart([]);
@@ -282,12 +282,12 @@ function loadHistory() {
             </div>
         </div>
     `).join("");
-    
+
     updateChart(meals);
 }
 
 function deleteMeal(id) {
-    if(!confirm("Excluir refeição?")) return;
+    if (!confirm("Excluir refeição?")) return;
     let meals = JSON.parse(localStorage.getItem("meals") || "[]");
     meals = meals.filter(m => m.id !== id);
     localStorage.setItem("meals", JSON.stringify(meals));
@@ -334,7 +334,7 @@ function loadSettingsInputs() {
 }
 
 function clearAllData() {
-    if(confirm("Apagar TUDO e reiniciar o app?")) {
+    if (confirm("Apagar TUDO e reiniciar o app?")) {
         localStorage.clear();
         location.reload();
     }
@@ -347,7 +347,7 @@ let historyChart = null;
 
 function updateChart(meals) {
     const ctx = document.getElementById('historyChart').getContext('2d');
-    
+
     // Detecta se está em modo escuro para ajustar a cor das linhas
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
@@ -392,9 +392,9 @@ function updateChart(meals) {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { 
-                    beginAtZero: true, 
-                    grid: { 
+                y: {
+                    beginAtZero: true,
+                    grid: {
                         display: true, // AQUI: Liga as linhas
                         color: gridColor, // Cor adaptativa
                         borderDash: [5, 5], // Linha pontilhada (5px linha, 5px espaço)
@@ -405,8 +405,8 @@ function updateChart(meals) {
                         font: { size: 10 }
                     }
                 },
-                x: { 
-                    grid: { 
+                x: {
+                    grid: {
                         display: false // Mantém vertical limpo
                     },
                     ticks: {
@@ -415,7 +415,7 @@ function updateChart(meals) {
                     }
                 }
             },
-            plugins: { 
+            plugins: {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: isDark ? '#374151' : '#fff',
@@ -426,7 +426,7 @@ function updateChart(meals) {
                     padding: 10,
                     displayColors: false, // Remove o quadradinho de cor do tooltip
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             return context.parsed.y + ' Kcal';
                         }
                     }
@@ -443,12 +443,12 @@ function addIngredient() {
     const name = document.getElementById("ing-name").value.trim();
     const quantity = document.getElementById("ing-qtd").value;
     const unit = document.getElementById("ing-unit").value;
-    
+
     if (!name) return showToast("Digite o nome!", "error");
 
     currentIngredients.push({ name, quantity, unit });
     updateIngredientList();
-    
+
     document.getElementById("ing-name").value = "";
     document.getElementById("ing-name").focus();
     resetSaveButton();
@@ -464,7 +464,7 @@ function clearIngredients() {
 function updateIngredientList() {
     const list = document.getElementById("ing-list");
     const card = document.getElementById("current-recipe-card");
-    
+
     if (currentIngredients.length === 0) {
         card.classList.add("hidden");
         return;
@@ -474,7 +474,9 @@ function updateIngredientList() {
 
     list.innerHTML = currentIngredients.map((i, idx) => `
         <li class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span class="dark:text-gray-300">${i.quantity}${i.unit} ${i.name}</span>
+            <span class="dark:text-gray-300">
+                <strong>${i.quantity}${i.unit}</strong> &nbsp; ${i.name}
+            </span>
             <button onclick="removeIngredient(${idx})" class="text-red-400"><i class="fas fa-times"></i></button>
         </li>
     `).join("");
@@ -504,5 +506,5 @@ function showToast(msg, type) {
 
 function animateValue(id, val) {
     const el = document.getElementById(id);
-    if(el) el.innerText = Math.round(val);
+    if (el) el.innerText = Math.round(val);
 }
