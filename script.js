@@ -41,17 +41,26 @@ function updateThemeIcon(isDark) {
 }
 
 /* ============================================================
-   FUNÇÃO DE NAVEGAÇÃO
+   FUNÇÃO DE NAVEGAÇÃO (CORRIGIDA)
    ============================================================ */
 function navigateTo(target) {
+    // 1. Troca a tela visível
     document.querySelectorAll(".page-section").forEach(pg => pg.classList.remove("active"));
     const targetScreen = document.getElementById(`${target}-screen`);
     if (targetScreen) targetScreen.classList.add("active");
 
-    // Atualiza botões do rodapé
+    // 2. Atualiza os botões do rodapé
     document.querySelectorAll(".bottom-nav-item").forEach(b => b.classList.remove("active"));
     const btn = document.querySelector(`[data-target="${target}-screen"]`);
     if (btn) btn.classList.add("active");
+
+    // 3. ATUALIZA OS DADOS DA TELA ESPECÍFICA (O Pulo do Gato)
+    if (target === 'history') {
+        loadHistory(); // Recarrega a lista sempre que entrar no histórico
+    } 
+    else if (target === 'home') {
+        updateDashboard(); // Garante que os totais de hoje estejam certos
+    }
 }
 
 /* ============================================================
