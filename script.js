@@ -1,20 +1,23 @@
 /* ============================================================
-   Nutridiário - script.js (Versão Final Corrigida)
-   Frontend → GitHub Pages
-   Backend → Vercel
+   Nutridiário - script.js (Versão Blindada v3.0)
    ============================================================ */
 
-// Estado da aplicação
 let currentIngredients = [];
 let lastCalculatedTotals = null;
 
 /* ============================================================
-   TEMA ESCURO (DARK MODE) - Lógica Adicionada
+   TEMA & INICIALIZAÇÃO
    ============================================================ */
+window.addEventListener("DOMContentLoaded", () => {
+    initTheme();
+    // Garante que existam metas padrão ao abrir
+    ensureDefaultGoals(); 
+    navigateTo("home");
+});
+
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
     if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
         document.documentElement.classList.add('dark');
         updateThemeIcon(true);
@@ -27,306 +30,89 @@ function initTheme() {
 function toggleDarkMode() {
     const html = document.documentElement;
     const isDark = html.classList.toggle('dark');
-    
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateThemeIcon(isDark);
 }
 
 function updateThemeIcon(isDark) {
     const icon = document.getElementById('theme-icon');
-    if (icon) {
-        // Troca o ícone: Lua (dark) ou Sol (light)
-        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    }
+    if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
 }
 
 /* ============================================================
-   FUNÇÃO DE NAVEGAÇÃO (CORRIGIDA)
+   UTILITÁRIO DE LIMPEZA NUMÉRICA (A CORREÇÃO MÁGICA)
+   ============================================================ */
+// Transforma "20g", "20 g", "approx 20" em apenas 20.0
+function safeParseFloat(value) {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    // Remove tudo que não for número ou ponto decimal
+    const clean = value.toString().replace(/[^0-9.]/g, ''); 
+    return parseFloat(clean) || 0;
+}
+
+/* ============================================================
+   NAVEGAÇÃO & ATUALIZAÇÃO
    ============================================================ */
 function navigateTo(target) {
-    // 1. Troca a tela visível
     document.querySelectorAll(".page-section").forEach(pg => pg.classList.remove("active"));
     const targetScreen = document.getElementById(`${target}-screen`);
     if (targetScreen) targetScreen.classList.add("active");
 
-    // 2. Atualiza os botões do rodapé
     document.querySelectorAll(".bottom-nav-item").forEach(b => b.classList.remove("active"));
     const btn = document.querySelector(`[data-target="${target}-screen"]`);
     if (btn) btn.classList.add("active");
 
-    // 3. ATUALIZA OS DADOS DA TELA ESPECÍFICA (O Pulo do Gato)
-    if (target === 'history') {
-        loadHistory(); // Recarrega a lista sempre que entrar no histórico
-    } 
-    else if (target === 'home') {
-        updateDashboard(); // Garante que os totais de hoje estejam certos
-    }
+    if (target === 'history') loadHistory();
+    if (target === 'home') updateDashboard();
+    if (target === 'settings') loadSettingsInputs();
 }
 
 /* ============================================================
-   TOAST (NOTIFICAÇÕES)
-   ============================================================ */
-function showToast(msg, type = "info") {
-    const container = document.getElementById("toast-container");
-
-    const el = document.createElement("div");
-    el.className = `px-4 py-3 rounded-lg shadow text-white flex items-center gap-2 animate-bounce-in ${
-        type === "error" ? "bg-red-500" :
-        type === "success" ? "bg-green-600" :
-        "bg-gray-800 dark:bg-gray-700"
-    }`;
-
-    el.innerHTML = `<span>${msg}</span>`;
-    container.appendChild(el);
-
-    setTimeout(() => {
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 300);
-    }, 3000);
-}
-
-/* ============================================================
-   ADICIONAR INGREDIENTE
-   ============================================================ */
-function addIngredient() {
-    const nameInput = document.getElementById("ing-name");
-    const qtdInput = document.getElementById("ing-qtd");
-    const unitInput = document.getElementById("ing-unit");
-
-    const name = nameInput.value.trim();
-    const quantity = qtdInput.value.trim();
-    const unit = unitInput.value.trim();
-
-    if (!name || !quantity || !unit) {
-        showToast("Preencha todos os campos!", "error");
-        return;
-    }
-
-    currentIngredients.push({ name, quantity, unit });
-    updateIngredientList();
-
-    // Resetar campos
-    nameInput.value = "";
-    qtdInput.value = "100";
-    nameInput.focus();
-
-    showToast("Ingrediente adicionado!", "success");
-    
-    // Reseta o botão salvar se houver mudança
-    resetSaveButton();
-}
-
-function clearIngredients() {
-    currentIngredients = [];
-    updateIngredientList();
-    document.getElementById("calc-results").classList.add("hidden");
-    resetSaveButton();
-}
-
-function updateIngredientList() {
-    const list = document.getElementById("ing-list");
-    const count = document.getElementById("ing-count");
-    const card = document.getElementById("current-recipe-card");
-
-    if (currentIngredients.length === 0) {
-        card.classList.add("hidden");
-        return;
-    }
-
-    card.classList.remove("hidden");
-    count.innerText = currentIngredients.length;
-
-    list.innerHTML = currentIngredients
-        .map((i, index) => `
-            <li class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                <span class="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>${i.quantity}${i.unit}</strong> ${i.name}
-                </span>
-                <button onclick="removeIngredient(${index})" class="text-red-400 hover:text-red-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </li>`)
-        .join("");
-}
-
-function removeIngredient(index) {
-    currentIngredients.splice(index, 1);
-    updateIngredientList();
-    resetSaveButton();
-}
-
-function resetSaveButton() {
-    const btn = document.getElementById("btn-save");
-    btn.disabled = true;
-    // Volta para estilo cinza (desabilitado)
-    btn.className = "bg-gray-200 text-gray-400 py-3 rounded-xl font-bold cursor-not-allowed transition-all flex justify-center items-center gap-2 dark:bg-gray-700 dark:text-gray-500 w-full";
-    lastCalculatedTotals = null;
-}
-
-/* ============================================================
-   CALCULAR NUTRIÇÃO (API)
-   ============================================================ */
-async function calculateNutrition() {
-    if (currentIngredients.length === 0) {
-        showToast("Adicione ingredientes antes de calcular.", "error");
-        return;
-    }
-
-    const btn = document.getElementById("btn-calc");
-    const originalContent = btn.innerHTML;
-
-    // Estado de Carregamento
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Calculando...';
-    btn.disabled = true;
-    btn.classList.add("opacity-75");
-
-    try {
-        const ingredientsText = currentIngredients
-            .map(x => `- ${x.name}: ${x.quantity} ${x.unit}`)
-            .join("\n");
-
-        // LEMBRETE: A URL do fetch deve ser a do seu Vercel
-        const response = await fetch("https://nutri-diario.vercel.app/api/nutrition", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: ingredientsText })
-        });
-
-        if (!response.ok) {
-            throw new Error("Erro ao conectar ao servidor");
-        }
-
-        const data = await response.json();
-        let text = data.choices[0].message.content;
-
-        // Limpeza extra para garantir JSON puro
-        text = text.replace(/```json|```/g, "").trim();
-        const jsonStr = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
-        
-        const results = JSON.parse(jsonStr);
-
-        // Soma os totais
-        let totals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-
-        results.forEach(r => {
-            totals.calories += Number(r.calories) || 0;
-            totals.protein += Number(r.protein) || 0;
-            totals.carbs += Number(r.carbs) || 0;
-            totals.fats += Number(r.fats) || 0;
-            totals.fiber += Number(r.fiber) || 0;
-        });
-
-        lastCalculatedTotals = totals;
-
-        // Atualiza UI
-        document.getElementById("res-cals").innerText = Math.round(totals.calories);
-        document.getElementById("res-prot").innerText = totals.protein.toFixed(1);
-        document.getElementById("res-carbs").innerText = totals.carbs.toFixed(1);
-        document.getElementById("res-fats").innerText = totals.fats.toFixed(1);
-        document.getElementById("res-fibers").innerText = totals.fiber.toFixed(1);
-
-        document.getElementById("calc-results").classList.remove("hidden");
-
-        // ============================================================
-        // CORREÇÃO DO BOTÃO SALVAR (Muda a cor para verde)
-        // ============================================================
-        const btnSave = document.getElementById("btn-save");
-        btnSave.disabled = false;
-        btnSave.className = "bg-green-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-700 transition-all flex justify-center items-center gap-2 w-full cursor-pointer active:scale-95";
-        
-        showToast("Cálculo concluído com sucesso!", "success");
-
-    } catch (err) {
-        console.error(err);
-        showToast("Erro: Tente novamente.", "error");
-    } finally {
-        btn.innerHTML = originalContent;
-        btn.disabled = false;
-        btn.classList.remove("opacity-75");
-    }
-}
-
-/* ============================================================
-   SALVAR REFEIÇÃO
-   ============================================================ */
-function saveMeal() {
-    if (!lastCalculatedTotals) {
-        showToast("Calcule antes de salvar!", "error");
-        return;
-    }
-
-    const meals = JSON.parse(localStorage.getItem("meals") || "[]");
-
-    meals.push({
-        id: Date.now(),
-        date: new Date().toLocaleString("pt-BR"),
-        timestamp: Date.now(), // Bom para ordenação
-        ingredients: [...currentIngredients], // Cópia do array
-        totals: lastCalculatedTotals
-    });
-
-    localStorage.setItem("meals", JSON.stringify(meals));
-
-    showToast("Refeição salva no histórico!", "success");
-    
-    // Limpa a tela após salvar para nova inserção
-    clearIngredients();
-    updateDashboard(); // Atualiza a Home
-    navigateTo("home");
-}
-
-/* ============================================================
-   DASHBOARD (HOME) - CORRIGIDO E BLINDADO
+   DASHBOARD (HOME)
    ============================================================ */
 function updateDashboard() {
     const meals = JSON.parse(localStorage.getItem("meals") || "[]");
-    
-    // Define a data de hoje
     const todayStr = new Date().toLocaleDateString("pt-BR");
 
-    // Filtra apenas refeições de hoje com segurança
     const todaysMeals = meals.filter(m => {
-        // Se não tiver timestamp (dados antigos), usa a data atual para não quebrar
         const dateToCheck = m.timestamp ? new Date(m.timestamp) : new Date();
         return dateToCheck.toLocaleDateString("pt-BR") === todayStr;
     });
 
     let dailyTotals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
 
-    // Soma os valores convertendo explicitamente para Number (evita erro de texto)
     todaysMeals.forEach(m => {
         if (m.totals) {
-            dailyTotals.calories += Number(m.totals.calories) || 0;
-            dailyTotals.protein += Number(m.totals.protein) || 0;
-            dailyTotals.carbs += Number(m.totals.carbs) || 0;
-            dailyTotals.fats += Number(m.totals.fats) || 0;
-            dailyTotals.fiber += Number(m.totals.fiber) || 0;
+            // Usa a função de limpeza segura aqui
+            dailyTotals.calories += safeParseFloat(m.totals.calories);
+            dailyTotals.protein += safeParseFloat(m.totals.protein);
+            dailyTotals.carbs += safeParseFloat(m.totals.carbs);
+            dailyTotals.fats += safeParseFloat(m.totals.fats);
+            dailyTotals.fiber += safeParseFloat(m.totals.fiber);
         }
     });
 
-    // Carrega as metas (ou usa padrão se não existir)
     const goals = getGoals();
 
-    // --- Atualiza a Interface (DOM) ---
-
-    // 1. Calorias e Barra de Progresso
+    // Atualiza HTML
     animateValue("dashboard-cals", dailyTotals.calories);
-    document.getElementById("dashboard-goal").innerText = goals.calories;
-
-    // Cálculo da porcentagem (proteção contra divisão por zero)
-    let percent = 0;
-    if (goals.calories > 0) {
-        percent = (dailyTotals.calories / goals.calories) * 100;
-    }
-    // Trava em 100% visualmente para a barra não estourar a tela
-    const visualPercent = Math.min(percent, 100);
     
-    document.getElementById("progress-bar-cals").style.width = `${visualPercent}%`;
-    document.getElementById("dashboard-percent").innerText = `${Math.round(percent)}%`; // Mostra o real (ex: 120%)
+    // Evita divisão por zero visualmente
+    const goalCalDisplay = goals.calories > 0 ? goals.calories : 2000;
+    document.getElementById("dashboard-goal").innerText = goalCalDisplay;
 
-    // Muda cor da barra se ultrapassar a meta
+    // Barra de progresso
+    let percent = 0;
+    if (goalCalDisplay > 0) percent = (dailyTotals.calories / goalCalDisplay) * 100;
+    
+    const visualPercent = Math.min(percent, 100);
+    document.getElementById("progress-bar-cals").style.width = `${visualPercent}%`;
+    document.getElementById("dashboard-percent").innerText = `${Math.round(percent)}%`;
+
+    // Cor da barra
     const bar = document.getElementById("progress-bar-cals");
-    if (dailyTotals.calories > goals.calories) {
+    if (dailyTotals.calories > goalCalDisplay) {
         bar.classList.remove("bg-primary-500");
         bar.classList.add("bg-red-500");
     } else {
@@ -334,61 +120,145 @@ function updateDashboard() {
         bar.classList.remove("bg-red-500");
     }
 
-    // 2. Macros (Arredondando para inteiros)
-    document.getElementById("dashboard-protein").innerText = Math.round(dailyTotals.protein);
-    document.getElementById("dashboard-protein-goal").innerText = goals.protein;
+    // Macros
+    updateMacroCard("dashboard-protein", dailyTotals.protein, goals.protein);
+    updateMacroCard("dashboard-carbs", dailyTotals.carbs, goals.carbs);
+    updateMacroCard("dashboard-fats", dailyTotals.fats, goals.fats);
+    updateMacroCard("dashboard-fibers", dailyTotals.fiber, goals.fibers);
+}
 
-    document.getElementById("dashboard-carbs").innerText = Math.round(dailyTotals.carbs);
-    document.getElementById("dashboard-carbs-goal").innerText = goals.carbs;
+function updateMacroCard(elementId, current, goal) {
+    const el = document.getElementById(elementId);
+    const goalEl = document.getElementById(`${elementId}-goal`);
+    
+    if (el) el.innerText = Math.round(current);
+    if (goalEl) goalEl.innerText = goal > 0 ? goal : '-';
+}
 
-    document.getElementById("dashboard-fats").innerText = Math.round(dailyTotals.fats);
-    document.getElementById("dashboard-fats-goal").innerText = goals.fats;
+/* ============================================================
+   CALCULAR (API)
+   ============================================================ */
+async function calculateNutrition() {
+    if (currentIngredients.length === 0) {
+        showToast("Adicione ingredientes!", "error");
+        return;
+    }
 
-    document.getElementById("dashboard-fibers").innerText = Math.round(dailyTotals.fiber);
-    document.getElementById("dashboard-fibers-goal").innerText = goals.fibers;
+    const btn = document.getElementById("btn-calc");
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Calculando...';
+    btn.disabled = true;
+
+    try {
+        const ingredientsText = currentIngredients.map(x => `- ${x.quantity} ${x.unit} de ${x.name}`).join("\n");
+
+        const response = await fetch("https://nutri-diario.vercel.app/api/nutrition", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: ingredientsText })
+        });
+
+        if (!response.ok) throw new Error("Erro servidor");
+
+        const data = await response.json();
+        let text = data.choices[0].message.content.replace(/```json|```/g, "").trim();
+        const jsonStr = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
+        const results = JSON.parse(jsonStr);
+
+        let totals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
+
+        results.forEach(r => {
+            totals.calories += safeParseFloat(r.calories);
+            totals.protein += safeParseFloat(r.protein);
+            totals.carbs += safeParseFloat(r.carbs);
+            totals.fats += safeParseFloat(r.fats);
+            totals.fiber += safeParseFloat(r.fiber);
+        });
+
+        lastCalculatedTotals = totals;
+
+        // Atualiza UI do resultado
+        document.getElementById("res-cals").innerText = Math.round(totals.calories);
+        document.getElementById("res-prot").innerText = totals.protein.toFixed(1);
+        document.getElementById("res-carbs").innerText = totals.carbs.toFixed(1);
+        document.getElementById("res-fats").innerText = totals.fats.toFixed(1);
+        document.getElementById("res-fibers").innerText = totals.fiber.toFixed(1);
+
+        document.getElementById("calc-results").classList.remove("hidden");
+        
+        // Habilita botão salvar
+        const btnSave = document.getElementById("btn-save");
+        btnSave.disabled = false;
+        btnSave.className = "bg-green-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-700 transition-all flex justify-center items-center gap-2 w-full cursor-pointer active:scale-95";
+
+        showToast("Calculado!", "success");
+
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao calcular. Tente novamente.", "error");
+    } finally {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }
+}
+
+/* ============================================================
+   SALVAR & HISTÓRICO
+   ============================================================ */
+function saveMeal() {
+    if (!lastCalculatedTotals) return;
+
+    const meals = JSON.parse(localStorage.getItem("meals") || "[]");
+    meals.push({
+        id: Date.now(),
+        date: new Date().toLocaleString("pt-BR"),
+        timestamp: Date.now(),
+        ingredients: [...currentIngredients],
+        totals: lastCalculatedTotals
+    });
+
+    localStorage.setItem("meals", JSON.stringify(meals));
+    showToast("Salvo!", "success");
+    
+    clearIngredients();
+    navigateTo("home");
 }
 
 function loadHistory() {
     const meals = JSON.parse(localStorage.getItem("meals") || "[]");
-    // Ordena do mais recente para o mais antigo
     meals.sort((a, b) => b.timestamp - a.timestamp);
-
     const container = document.getElementById("history-list");
     
     if (meals.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-400 py-4">Nenhuma refeição registrada ainda.</p>';
+        container.innerHTML = '<p class="text-center text-gray-400 py-4">Histórico vazio.</p>';
+        updateChart([]);
         return;
     }
 
     container.innerHTML = meals.map(m => `
-        <div class="p-4 bg-white rounded-xl border border-gray-100 shadow-sm dark:bg-dark-surface dark:border-dark-border">
+        <div class="p-4 bg-white rounded-xl border border-gray-100 shadow-sm mb-3 dark:bg-dark-surface dark:border-dark-border">
             <div class="flex justify-between mb-2">
                 <strong class="text-gray-800 dark:text-white">${m.date}</strong>
                 <button onclick="deleteMeal(${m.id})" class="text-xs text-red-400 hover:text-red-600">Excluir</button>
             </div>
-            <div class="text-xs text-gray-500 mb-2 italic dark:text-gray-400">
+            <div class="text-xs text-gray-500 mb-2 italic truncate dark:text-gray-400">
                 ${m.ingredients.map(i => `${i.quantity}${i.unit} ${i.name}`).join(", ")}
             </div>
             <div class="grid grid-cols-5 gap-1 text-center text-xs">
-                <div class="bg-green-50 rounded p-1 dark:bg-green-900/30">
-                    <div class="font-bold text-green-700 dark:text-green-400">${Math.round(m.totals.calories)}</div>
-                    <div class="text-[9px] text-green-600">Kcal</div>
+                <div class="bg-green-50 rounded p-1 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <b>${Math.round(safeParseFloat(m.totals.calories))}</b> Kcal
                 </div>
-                <div class="bg-blue-50 rounded p-1 dark:bg-blue-900/30">
-                    <div class="font-bold text-blue-700 dark:text-blue-400">${Math.round(m.totals.protein)}g</div>
-                    <div class="text-[9px] text-blue-600">Prot</div>
+                <div class="bg-blue-50 rounded p-1 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                    <b>${Math.round(safeParseFloat(m.totals.protein))}</b> Prot
                 </div>
-                <div class="bg-orange-50 rounded p-1 dark:bg-orange-900/30">
-                    <div class="font-bold text-orange-700 dark:text-orange-400">${Math.round(m.totals.carbs)}g</div>
-                    <div class="text-[9px] text-orange-600">Carb</div>
+                <div class="bg-orange-50 rounded p-1 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                    <b>${Math.round(safeParseFloat(m.totals.carbs))}</b> Carb
                 </div>
-                <div class="bg-yellow-50 rounded p-1 dark:bg-yellow-900/30">
-                    <div class="font-bold text-yellow-700 dark:text-yellow-400">${Math.round(m.totals.fats)}g</div>
-                    <div class="text-[9px] text-yellow-600">Gord</div>
+                <div class="bg-yellow-50 rounded p-1 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                    <b>${Math.round(safeParseFloat(m.totals.fats))}</b> Gord
                 </div>
-                 <div class="bg-gray-50 rounded p-1 dark:bg-gray-700">
-                    <div class="font-bold text-gray-700 dark:text-gray-300">${Math.round(m.totals.fiber)}g</div>
-                    <div class="text-[9px] text-gray-500">Fib</div>
+                <div class="bg-gray-50 rounded p-1 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                    <b>${Math.round(safeParseFloat(m.totals.fiber))}</b> Fib
                 </div>
             </div>
         </div>
@@ -398,37 +268,40 @@ function loadHistory() {
 }
 
 function deleteMeal(id) {
-    if(!confirm("Tem certeza que deseja excluir esta refeição?")) return;
-    
+    if(!confirm("Excluir refeição?")) return;
     let meals = JSON.parse(localStorage.getItem("meals") || "[]");
     meals = meals.filter(m => m.id !== id);
     localStorage.setItem("meals", JSON.stringify(meals));
-    
-    loadHistory();
-    updateDashboard();
-    showToast("Refeição excluída.", "info");
+    loadHistory(); // Recarrega a lista visualmente
 }
 
 /* ============================================================
-   METAS E CONFIGURAÇÕES
+   METAS & SETTINGS
    ============================================================ */
+function ensureDefaultGoals() {
+    const saved = localStorage.getItem("userGoals");
+    // Se não tem metas salvas ou se as metas estão zeradas (bug antigo)
+    if (!saved || saved.includes('"calories":0')) {
+        const defaultGoals = { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
+        localStorage.setItem("userGoals", JSON.stringify(defaultGoals));
+    }
+}
+
 function getGoals() {
-    const defaultGoals = { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
     const saved = JSON.parse(localStorage.getItem("userGoals"));
-    return saved || defaultGoals;
+    return saved || { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
 }
 
 function saveSettings() {
     const goals = {
-        calories: Number(document.getElementById("goal-cals").value) || 2000,
-        protein: Number(document.getElementById("goal-prot").value) || 150,
-        carbs: Number(document.getElementById("goal-carbs").value) || 200,
-        fats: Number(document.getElementById("goal-fats").value) || 70,
-        fibers: Number(document.getElementById("goal-fibers").value) || 30
+        calories: safeParseFloat(document.getElementById("goal-cals").value) || 2000,
+        protein: safeParseFloat(document.getElementById("goal-prot").value) || 150,
+        carbs: safeParseFloat(document.getElementById("goal-carbs").value) || 200,
+        fats: safeParseFloat(document.getElementById("goal-fats").value) || 70,
+        fibers: safeParseFloat(document.getElementById("goal-fibers").value) || 30
     };
-
     localStorage.setItem("userGoals", JSON.stringify(goals));
-    showToast("Metas atualizadas!", "success");
+    showToast("Metas salvas!", "success");
     updateDashboard();
 }
 
@@ -442,50 +315,43 @@ function loadSettingsInputs() {
 }
 
 function clearAllData() {
-    if(confirm("Isso apagará TODO o seu histórico e configurações. Continuar?")) {
+    if(confirm("Apagar TUDO e reiniciar o app?")) {
         localStorage.clear();
         location.reload();
     }
 }
 
 /* ============================================================
-   GRÁFICO (CHART.JS)
+   GRÁFICO
    ============================================================ */
 let historyChart = null;
 
 function updateChart(meals) {
     const ctx = document.getElementById('historyChart').getContext('2d');
-    
-    // Agrupar por dia (últimos 7 dias)
     const last7Days = {};
+    
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateStr = d.toLocaleDateString("pt-BR").substring(0, 5); // "dd/mm"
-        last7Days[dateStr] = 0;
+        last7Days[d.toLocaleDateString("pt-BR").substring(0, 5)] = 0;
     }
 
     meals.forEach(m => {
         const dStr = new Date(m.timestamp).toLocaleDateString("pt-BR").substring(0, 5);
         if (last7Days.hasOwnProperty(dStr)) {
-            last7Days[dStr] += m.totals.calories;
+            last7Days[dStr] += safeParseFloat(m.totals.calories);
         }
     });
 
-    const labels = Object.keys(last7Days);
-    const data = Object.values(last7Days);
-
-    if (historyChart) {
-        historyChart.destroy();
-    }
+    if (historyChart) historyChart.destroy();
 
     historyChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: Object.keys(last7Days),
             datasets: [{
                 label: 'Kcal',
-                data: data,
+                data: Object.values(last7Days),
                 backgroundColor: '#8b5cf6',
                 borderRadius: 4
             }]
@@ -493,31 +359,79 @@ function updateChart(meals) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, grid: { display: false } },
-                x: { grid: { display: false } }
-            },
+            scales: { y: { display: false }, x: { grid: { display: false } } },
             plugins: { legend: { display: false } }
         }
     });
 }
 
 /* ============================================================
-   UTILITÁRIOS
+   AUXILIARES UI
    ============================================================ */
-function animateValue(id, end) {
-    const obj = document.getElementById(id);
-    // Simples atualização, poderia ser uma animação numérica
-    obj.innerText = Math.round(end);
+function addIngredient() {
+    const name = document.getElementById("ing-name").value.trim();
+    const quantity = document.getElementById("ing-qtd").value;
+    const unit = document.getElementById("ing-unit").value;
+    
+    if (!name) return showToast("Digite o nome!", "error");
+
+    currentIngredients.push({ name, quantity, unit });
+    updateIngredientList();
+    
+    document.getElementById("ing-name").value = "";
+    document.getElementById("ing-name").focus();
+    resetSaveButton();
 }
 
-/* ============================================================
-   INICIALIZAÇÃO
-   ============================================================ */
-window.addEventListener("DOMContentLoaded", () => {
-    initTheme();
-    navigateTo("home");
-    updateDashboard();
-    loadHistory(); // Prepara histórico se o usuário for para lá
-    loadSettingsInputs(); // Prepara inputs da tela de settings
-});
+function clearIngredients() {
+    currentIngredients = [];
+    updateIngredientList();
+    document.getElementById("calc-results").classList.add("hidden");
+    resetSaveButton();
+}
+
+function updateIngredientList() {
+    const list = document.getElementById("ing-list");
+    const card = document.getElementById("current-recipe-card");
+    
+    if (currentIngredients.length === 0) {
+        card.classList.add("hidden");
+        return;
+    }
+    card.classList.remove("hidden");
+    document.getElementById("ing-count").innerText = currentIngredients.length;
+
+    list.innerHTML = currentIngredients.map((i, idx) => `
+        <li class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span class="dark:text-gray-300">${i.quantity}${i.unit} ${i.name}</span>
+            <button onclick="removeIngredient(${idx})" class="text-red-400"><i class="fas fa-times"></i></button>
+        </li>
+    `).join("");
+}
+
+function removeIngredient(idx) {
+    currentIngredients.splice(idx, 1);
+    updateIngredientList();
+    resetSaveButton();
+}
+
+function resetSaveButton() {
+    const btn = document.getElementById("btn-save");
+    btn.disabled = true;
+    btn.className = "bg-gray-200 text-gray-400 py-3 rounded-xl font-bold cursor-not-allowed flex justify-center items-center gap-2 w-full dark:bg-gray-700 dark:text-gray-500";
+    lastCalculatedTotals = null;
+}
+
+function showToast(msg, type) {
+    const container = document.getElementById("toast-container");
+    const el = document.createElement("div");
+    el.className = `px-4 py-3 rounded-lg shadow text-white animate-bounce-in ${type === "error" ? "bg-red-500" : "bg-green-600"}`;
+    el.innerText = msg;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+function animateValue(id, val) {
+    const el = document.getElementById(id);
+    if(el) el.innerText = Math.round(val);
+}
