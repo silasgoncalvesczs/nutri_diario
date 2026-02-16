@@ -1,0 +1,72 @@
+<section id="home-screen" class="page-section active">
+                <div
+                    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium dark:text-gray-400">Resumo de Hoje</p>
+                            <h2 class="text-3xl font-bold text-gray-800 dark:text-white">
+                                <span id="dashboard-cals">0</span> <span
+                                    class="text-sm text-gray-400 font-normal dark:text-gray-500">/ <span
+                                        id="dashboard-goal">2000</span> kcal</span>
+                            </h2>
+                        </div>
+                        <div id="dashboard-percent" class="text-2xl font-bold text-primary-600 dark:text-primary-400">0%
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-3 mb-6 overflow-hidden dark:bg-gray-700">
+                        <div id="progress-bar-cals"
+                            class="bg-primary-500 h-3 rounded-full transition-all duration-1000 ease-out"
+                            style="width: 0%"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-3 rounded-xl dark:bg-blue-900/20 dark:border dark:border-blue-900/50">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-2 h-2 rounded-full bg-blue-500"></div><span
+                                    class="text-xs font-bold text-blue-700 uppercase dark:text-blue-300">Proteínas</span>
+                            </div>
+                            <p class="text-lg font-bold text-gray-700 dark:text-gray-200"><span
+                                    id="dashboard-protein">0</span><span
+                                    class="text-xs text-gray-500 font-normal dark:text-gray-400">/ <span
+                                        id="dashboard-protein-goal">0</span>g</span></p>
+                        </div>
+                        <div
+                            class="bg-orange-50 p-3 rounded-xl dark:bg-orange-900/20 dark:border dark:border-orange-900/50">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-2 h-2 rounded-full bg-orange-500"></div><span
+                                    class="text-xs font-bold text-orange-700 uppercase dark:text-orange-300">Carboidratos</span>
+                            </div>
+                            <p class="text-lg font-bold text-gray-700 dark:text-gray-200"><span
+                                    id="dashboard-carbs">0</span><span
+                                    class="text-xs text-gray-500 font-normal dark:text-gray-400">/ <span
+                                        id="dashboard-carbs-goal">0</span>g</span></p>
+                        </div>
+                        <div
+                            class="bg-yellow-50 p-3 rounded-xl dark:bg-yellow-900/20 dark:border dark:border-yellow-900/50">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-2 h-2 rounded-full bg-yellow-500"></div><span
+                                    class="text-xs font-bold text-yellow-700 uppercase dark:text-yellow-300">Gorduras</span>
+                            </div>
+                            <p class="text-lg font-bold text-gray-700 dark:text-gray-200"><span
+                                    id="dashboard-fats">0</span><span
+                                    class="text-xs text-gray-500 font-normal dark:text-gray-400">/ <span
+                                        id="dashboard-fats-goal">0</span>g</span></p>
+                        </div>
+                        <div
+                            class="bg-green-50 p-3 rounded-xl dark:bg-green-900/20 dark:border dark:border-green-900/50">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-2 h-2 rounded-full bg-green-500"></div><span
+                                    class="text-xs font-bold text-green-700 uppercase dark:text-green-300">Fibras</span>
+                            </div>
+                            <p class="text-lg font-bold text-gray-700 dark:text-gray-200"><span
+                                    id="dashboard-fibers">0</span><span
+                                    class="text-xs text-gray-500 font-normal dark:text-gray-400">/ <span
+                                        id="dashboard-fibers-goal">0</span>g</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="navigateTo('calculator')"
+                    class="w-full bg-gradient-to-r from-primary-600 to-primary-500 text-white p-4 rounded-xl shadow-lg shadow-primary-500/30 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all dark:shadow-none">
+                    <i class="fas fa-plus-circle text-xl"></i><span class="font-bold">Nova Refeição</span>
+                </button>
+            </section>

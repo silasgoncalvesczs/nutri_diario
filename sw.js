@@ -1,18 +1,26 @@
-/* ============================================================
-   NutriDiário - Service Worker
-   Cache básico para PWA
-   ============================================================ */
+const CACHE_NAME = "nutridiario-cache-v2"; // Atualizei a versão
 
-const CACHE_NAME = "nutridiario-cache-v1";
-
+// Atualizado com a sua estrutura real de pastas
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./styles.css",
-  "./script.js",
   "./manifest.json",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  // Precisamos adicionar as rotas dos componentes:
+  "./components/calculator.html",
+  "./components/dashboard.html",
+  "./components/goals.html",
+  "./components/history.html",
+  "./components/login.html",
+  // E as rotas dos scripts:
+  "./js/api.js",
+  "./js/auth.js",
+  "./js/config.js",
+  "./js/database.js",
+  "./js/main.js",
+  "./js/ui.js"
 ];
 
 self.addEventListener("install", (event) => {
@@ -32,7 +40,6 @@ self.addEventListener("activate", (event) => {
       )
     )
   );
-
   self.clients.claim();
 });
 

@@ -1,3 +1,4 @@
+// js/config.js
 export const firebaseConfig = {
     apiKey: "AIzaSyAq8JHIp3kE4-jhabLP2Gj1YwEBY9VS-EI",
     authDomain: "nutridiario-8ff78.firebaseapp.com",
@@ -8,10 +9,11 @@ export const firebaseConfig = {
     measurementId: "G-G967ZD1H3E"
 };
 
-// Inicializa o Firebase (usando o SDK compat que você já linkou no HTML)
+// Inicializa o Firebase (usando o SDK compat que está no HTML)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
+// Exporta as instâncias para usarmos nos outros arquivos
 export const auth = firebase.auth();
 export const db = firebase.firestore();

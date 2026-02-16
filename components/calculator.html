@@ -1,18 +1,88 @@
 <section id="calculator-screen" class="page-section">
     <div
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 dark:bg-dark-surface dark:border-dark-border">
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
         <h2 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">O que você comeu?</h2>
-        <input type="text" id="ing-name" placeholder="Ex: Abacate..."
-            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3 dark:bg-dark-bg dark:text-white">
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <input type="number" id="ing-qtd" value="100"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 dark:bg-dark-bg dark:text-white">
-            <select id="ing-unit"
-                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 dark:bg-dark-bg dark:text-white">
-                <option value="g">Gramas (g)</option>
-                <option value="uni">Unidade(s)</option>
-            </select>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1 dark:text-gray-400">Ingrediente /
+                    Alimento</label>
+                <input type="text" id="ing-name" placeholder="Ex: Abacate..."
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:bg-dark-bg dark:border-dark-border dark:text-white dark:placeholder-gray-600">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1 dark:text-gray-400">Qtd.</label>
+                    <input type="number" id="ing-qtd" value="100"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1 dark:text-gray-400">Unidade</label>
+                    <select id="ing-unit"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                        <option value="g">Gramas (g)</option>
+                        <option value="uni">Unidade(s)</option>
+                        <option value="ml">Mililitros (ml)</option>
+                        <option value="col">Colher(es)</option>
+                        <option value="xíc">Xícara(s)</option>
+                        <option value="fat">Fatia(s)</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="addIngredient()"
+                class="w-full bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors flex justify-center items-center gap-2 dark:bg-primary-600 dark:hover:bg-primary-700">
+                <i class="fas fa-arrow-down"></i> Adicionar
+            </button>
         </div>
-        <button onclick="addIngredient()" class="w-full bg-gray-800 text-white py-3 rounded-lg">Adicionar</button>
+    </div>
+
+    <div id="current-recipe-card"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hidden dark:bg-dark-surface dark:border-dark-border">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-gray-700 dark:text-gray-200">Ingredientes (<span id="ing-count">0</span>)</h3>
+            <button onclick="clearIngredients()"
+                class="text-xs text-red-500 font-medium hover:underline">Limpar</button>
+        </div>
+        <ul id="ing-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto"></ul>
+
+        <div id="calc-results"
+            class="hidden bg-green-50 border border-green-100 rounded-xl p-4 mb-4 dark:bg-green-900/20 dark:border-green-900/50">
+            <p class="text-center text-green-800 text-sm font-medium mb-2 dark:text-green-400">Estimativa
+                Total</p>
+            <div class="grid grid-cols-3 gap-2 text-center mb-2">
+                <div><span class="block text-xl font-bold text-green-700 dark:text-green-300"
+                        id="res-cals">0</span><span
+                        class="text-[10px] text-green-600 uppercase tracking-wider dark:text-green-500">Kcal</span>
+                </div>
+                <div><span class="block text-xl font-bold text-green-700 dark:text-green-300"
+                        id="res-prot">0</span><span
+                        class="text-[10px] text-green-600 uppercase tracking-wider dark:text-green-500">Prot</span>
+                </div>
+                <div><span class="block text-xl font-bold text-green-700 dark:text-green-300"
+                        id="res-carbs">0</span><span
+                        class="text-[10px] text-green-600 uppercase tracking-wider dark:text-green-500">Carb</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center">
+                <div><span class="block text-xl font-bold text-green-700 dark:text-green-300"
+                        id="res-fats">0</span><span
+                        class="text-[10px] text-green-600 uppercase tracking-wider dark:text-green-500">Gord</span>
+                </div>
+                <div><span class="block text-xl font-bold text-green-700 dark:text-green-300"
+                        id="res-fibers">0</span><span
+                        class="text-[10px] text-green-600 uppercase tracking-wider dark:text-green-500">Fibras</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button id="btn-calc" onclick="calculateNutrition()"
+                class="bg-primary-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-primary-700 transition-all flex justify-center items-center gap-2 dark:shadow-none">
+                <i class="fas fa-magic"></i> Calcular
+            </button>
+            <button id="btn-save" onclick="saveMeal()" disabled
+                class="bg-gray-200 text-gray-400 py-3 rounded-xl font-bold cursor-not-allowed transition-all flex justify-center items-center gap-2 dark:bg-gray-700 dark:text-gray-500">
+                <i class="fas fa-check"></i> Gravar
+            </button>
+        </div>
     </div>
 </section>

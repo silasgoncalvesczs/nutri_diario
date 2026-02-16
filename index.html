@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,9 +8,13 @@
     <title>NutriDiário</title>
 
     <link rel="manifest" href="manifest.json" />
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -17,14 +22,93 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <link rel="stylesheet" href="styles.css">
-</head>
-<body class="bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-gray-100 min-h-screen">
-
-    <div id="app-view">
-        </div>
-
-    <div id="toast-container"></div>
-
     <script type="module" src="js/main.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#f5f3ff', 100: '#ede9fe', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' },
+                        dark: { bg: '#111827', surface: '#1f2937', border: '#374151' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col dark:bg-dark-bg dark:text-gray-100 transition-colors duration-300">
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <div data-include="./components/login.html"></div>
+
+    <div id="app-wrapper" class="hidden flex-col flex-1">
+
+        <header
+            class="bg-white shadow-sm sticky top-0 z-40 dark:bg-dark-surface dark:border-b dark:border-dark-border transition-colors duration-300">
+            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div
+                        class="bg-primary-100 text-primary-600 p-2 rounded-lg dark:bg-primary-900 dark:text-primary-300">
+                        <i class="fas fa-leaf text-lg"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 tracking-tight dark:text-white">Nutri<span
+                            class="text-primary-600 dark:text-primary-400">Diário</span></h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleDarkMode()"
+                        class="p-2 text-gray-400 hover:text-yellow-500 transition-colors dark:text-yellow-400">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
+                    <button onclick="navigateTo('settings')"
+                        class="p-2 text-gray-400 hover:text-primary-600 transition-colors dark:hover:text-primary-400">
+                        <img id="user-avatar" src="" class="w-8 h-8 rounded-full hidden border-2 border-primary-500">
+                        <i id="user-avatar-fallback" class="fas fa-user-circle text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-md mx-auto w-full p-4 pb-24">
+            <div data-include="./components/home.html"></div>
+            <div data-include="./components/calculator.html"></div>
+            <div data-include="./components/history.html"></div>
+            <div data-include="./components/settings.html"></div>
+        </main>
+
+        <nav
+            class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe pt-1 px-6 h-[70px] flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
+            <button onclick="navigateTo('home')"
+                class="bottom-nav-item active flex flex-col items-center justify-center w-16 h-full text-gray-400 transition-colors dark:text-gray-500"
+                data-target="home-screen">
+                <i class="fas fa-home text-xl mb-1 transition-transform duration-200"></i><span
+                    class="text-[10px] font-medium">Início</span>
+            </button>
+            <div class="relative -top-6">
+                <button onclick="navigateTo('calculator')"
+                    class="bg-primary-600 text-white w-14 h-14 rounded-full shadow-lg shadow-primary-600/40 flex items-center justify-center hover:bg-primary-700 hover:scale-105 transition-all dark:shadow-none dark:bg-primary-600">
+                    <i class="fas fa-plus text-2xl"></i>
+                </button>
+            </div>
+            <button onclick="navigateTo('history')"
+                class="bottom-nav-item flex flex-col items-center justify-center w-16 h-full text-gray-400 transition-colors dark:text-gray-500"
+                data-target="history-screen">
+                <i class="fas fa-calendar-alt text-xl mb-1 transition-transform duration-200"></i><span
+                    class="text-[10px] font-medium">Histórico</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("./sw.js").catch(err => console.log("Erro SW:", err));
+        }
+    </script>
 </body>
+
 </html>
