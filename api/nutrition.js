@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Pega a chave do Groq que configuramos na Vercel
         const apiKey = (process.env.GROQ_API_KEY || "").trim();
 
         if (!apiKey) {
@@ -46,7 +45,6 @@ Formato obrigatório exato:
 ]
 Use números para os macros.`;
 
-        // URL oficial da API do Groq (que simula a OpenAI)
         const url = `https://api.groq.com/openai/v1/chat/completions`;
 
         const response = await fetch(url, {
@@ -56,12 +54,13 @@ Use números para os macros.`;
                 "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "llama3-8b-8192", // Modelo gratuito e ultrarrápido do Groq
+                // AQUI ESTÁ A CORREÇÃO: Usando o modelo novo e ativo do Groq!
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: `Ingredientes:\n${prompt}` }
                 ],
-                temperature: 0.1 // Mantém a IA focada apenas em dados, sem inventar texto
+                temperature: 0.1
             })
         });
 
@@ -72,8 +71,6 @@ Use números para os macros.`;
             return res.status(response.status).json({ error: { message: data.error?.message || "Erro na API do Groq" } });
         }
 
-        // Como o Groq devolve no formato idêntico ao da OpenAI, 
-        // basta repassar a resposta direto para o seu script.js!
         return res.status(200).json(data);
 
     } catch (err) {
