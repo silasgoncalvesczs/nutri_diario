@@ -1,10 +1,49 @@
-<section id="settings-screen" class="page-section">
+<section id="settings-screen" class="page-section pb-6">
     <div
         class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
-        <h2 class="text-xl font-bold text-gray-800 mb-6 dark:text-white">Minhas Metas</h2>
+
+        <h2 class="text-xl font-bold text-gray-800 mb-5 dark:text-white flex items-center gap-2">
+            <i class="fas fa-user-circle text-primary-500"></i> Meu Perfil
+        </h2>
+
+        <div class="flex items-center gap-4 mb-6">
+            <div class="relative">
+                <img id="settings-avatar" src=""
+                    class="w-20 h-20 rounded-full border-2 border-primary-500 object-cover shadow-sm hidden">
+                <div id="settings-avatar-fallback"
+                    class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 dark:bg-dark-bg border-2 border-dashed border-gray-300 dark:border-dark-border">
+                    <i class="fas fa-user text-3xl"></i>
+                </div>
+
+                <label for="avatar-upload"
+                    class="absolute bottom-0 right-0 bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary-700 hover:scale-105 transition-all">
+                    <i class="fas fa-camera text-sm"></i>
+                </label>
+                <input type="file" id="avatar-upload" accept="image/*" class="hidden" onchange="previewAvatar(event)">
+            </div>
+
+            <div class="flex-1">
+                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Como quer ser
+                    chamado?</label>
+                <input type="text" id="profile-name" placeholder="Seu nome"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+            </div>
+        </div>
+
+        <button onclick="saveProfile()" id="btn-save-profile"
+            class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-900 transition-colors mb-8 dark:bg-primary-600 dark:hover:bg-primary-700 active:scale-95">
+            Atualizar Perfil
+        </button>
+
+        <div class="w-full h-px bg-gray-100 dark:bg-dark-border mb-8"></div>
+
+        <h2 class="text-xl font-bold text-gray-800 mb-5 dark:text-white flex items-center gap-2">
+            <i class="fas fa-bullseye text-primary-500"></i> Minhas Metas
+        </h2>
+
         <div class="space-y-5">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Meta de
+                <label class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Meta Diária de
                     Calorias</label>
                 <div class="relative">
                     <input type="number" id="goal-cals"
@@ -12,6 +51,7 @@
                     <span class="absolute right-4 top-3.5 text-gray-400 text-sm">kcal</span>
                 </div>
             </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Proteínas</label>
@@ -22,7 +62,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Carbo</label>
+                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Carboidratos</label>
                     <div class="relative">
                         <input type="number" id="goal-carbs"
                             class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
@@ -30,6 +70,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Gorduras</label>
@@ -50,12 +91,12 @@
             </div>
 
             <button onclick="saveSettings()"
-                class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-colors mt-2 dark:shadow-none">Salvar
+                class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-colors mt-2 dark:shadow-none active:scale-95">Salvar
                 Metas</button>
 
             <div class="pt-6 border-t border-gray-100 mt-6 dark:border-dark-border">
                 <button onclick="logout()"
-                    class="w-full text-red-500 text-sm font-medium hover:text-red-600 py-2 border border-red-100 rounded-lg dark:border-red-900/30 dark:bg-red-900/10">
+                    class="w-full text-red-500 text-sm font-bold hover:text-red-600 py-3 border border-red-100 rounded-xl dark:border-red-900/30 dark:bg-red-900/10 transition-colors active:scale-95">
                     <i class="fas fa-sign-out-alt mr-2"></i> Sair da Conta (Logout)
                 </button>
             </div>

@@ -223,6 +223,85 @@ window.saveSettings = async () => {
     }
 };
 
+// --- NOVO: LÓGICA DO PERFIL ---
+let tempAvatarBase64 = null; // Guarda a foto comprimida antes de salvar
+
+window.previewAvatar = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Usa um FileReader para ler a foto que a pessoa escolheu
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+        // Redimensiona a imagem para não pesar no banco de dados
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 200; // Tamanho ideal para um avatar
+            let width = img.width;
+            let height = img.height;
+
+            // Mantém a proporção e diminui
+            if (width > height) {
+                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+            } else {
+                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Transforma na imagem comprimida e mostra na tela
+            tempAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('settings-avatar').src = tempAvatarBase64;
+            document.getElementById('settings-avatar').classList.remove('hidden');
+            document.getElementById('settings-avatar-fallback').classList.add('hidden');
+        }
+    };
+};
+
+window.saveProfile = async () => {
+    if (!currentUser) return;
+    const newName = document.getElementById("profile-name").value.trim();
+
+    const btn = document.getElementById("btn-save-profile");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    btn.disabled = true;
+
+    try {
+        // 1. Atualiza apenas o NOME no Firebase Auth
+        if (newName) {
+            await currentUser.updateProfile({ displayName: newName });
+        }
+
+        // 2. Salva a FOTO GIGANTE no Banco de Dados (Firestore)
+        if (tempAvatarBase64) {
+            await DB.saveUserProfilePhoto(currentUser.uid, tempAvatarBase64);
+
+            // Atualiza a foto pequena lá no cabeçalho do app na mesma hora
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) {
+                avatarEl.src = tempAvatarBase64;
+                avatarEl.classList.remove('hidden');
+                document.getElementById('user-avatar-fallback').classList.add('hidden');
+            }
+        }
+
+        showToast("Perfil atualizado com sucesso!", "success");
+    } catch (error) {
+        console.error(error);
+        showToast("Erro ao atualizar o perfil.", "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
 /* ============================================================
    LÓGICA INTERNA E INICIALIZAÇÃO
    ============================================================ */
@@ -269,9 +348,23 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 async function loadDataFromCloud() {
     if (!currentUser) return;
+
+    // Carrega Metas
     const goals = await DB.getUserGoals(currentUser.uid);
     if (goals) globalGoals = goals;
     else await DB.saveUserGoals(currentUser.uid, globalGoals);
+
+    // NOVO: Carrega a foto do Banco de Dados
+    const savedPhoto = await DB.getUserProfilePhoto(currentUser.uid);
+    if (savedPhoto) {
+        tempAvatarBase64 = savedPhoto; // Guarda na memória
+        const avatarEl = document.getElementById('user-avatar');
+        if (avatarEl) {
+            avatarEl.src = savedPhoto;
+            avatarEl.classList.remove('hidden');
+            document.getElementById('user-avatar-fallback').classList.add('hidden');
+        }
+    }
 
     globalMeals = await DB.getMeals(currentUser.uid);
     updateDashboard();
@@ -388,11 +481,23 @@ function updateChart(meals) {
 }
 
 function loadSettingsInputs() {
+    // Carrega as Metas (já existia)
     document.getElementById("goal-cals").value = globalGoals.calories;
     document.getElementById("goal-prot").value = globalGoals.protein;
     document.getElementById("goal-carbs").value = globalGoals.carbs;
     document.getElementById("goal-fats").value = globalGoals.fats;
     document.getElementById("goal-fibers").value = globalGoals.fibers;
+
+    // NOVO: Carrega os dados do Perfil
+    if (currentUser) {
+        document.getElementById("profile-name").value = currentUser.displayName || "";
+
+        if (currentUser.photoURL) {
+            document.getElementById("settings-avatar").src = currentUser.photoURL;
+            document.getElementById("settings-avatar").classList.remove("hidden");
+            document.getElementById("settings-avatar-fallback").classList.add("hidden");
+        }
+    }
 }
 
 function updateIngredientList() {

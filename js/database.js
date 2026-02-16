@@ -32,3 +32,14 @@ export async function saveMealToCloud(userId, mealData) {
 export async function deleteMealFromCloud(userId, mealId) {
     return db.collection("users").doc(userId).collection("meals").doc(mealId).delete();
 }
+
+// Busca a foto de perfil do banco de dados
+export async function getUserProfilePhoto(userId) {
+    const docSnap = await db.collection("users").doc(userId).get();
+    return docSnap.exists ? docSnap.data().photoBase64 : null;
+}
+
+// Salva a foto de perfil gigante no banco de dados
+export async function saveUserProfilePhoto(userId, photoBase64) {
+    return db.collection("users").doc(userId).set({ photoBase64 }, { merge: true });
+}
