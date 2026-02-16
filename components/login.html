@@ -1,0 +1,41 @@
+<section id="login-screen"
+    class="flex flex-col items-center justify-center min-h-screen p-6 bg-white dark:bg-dark-bg transition-opacity duration-500">
+    <div class="text-center mb-8">
+        <div
+            class="bg-primary-100 text-primary-600 p-5 rounded-full inline-block mb-4 dark:bg-primary-900 dark:text-primary-300 shadow-sm">
+            <i class="fas fa-leaf text-5xl"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 tracking-tight dark:text-white mb-2">Nutri<span
+                class="text-primary-600 dark:text-primary-400">Diário</span></h1>
+        <p class="text-gray-500 dark:text-gray-400">Sua alimentação inteligente na nuvem</p>
+    </div>
+
+    <button onclick="loginWithGoogle()"
+        class="w-full max-w-xs bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold shadow-sm hover:bg-gray-50 hover:scale-105 transition-all flex justify-center items-center gap-3 dark:bg-dark-surface dark:border-dark-border dark:text-white dark:hover:bg-gray-800 mb-6">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+        Entrar com Google
+    </button>
+
+    <div class="w-full max-w-xs flex items-center gap-3 mb-6">
+        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
+        <span class="text-xs text-gray-400 font-medium tracking-wider">OU COM E-MAIL</span>
+        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
+    </div>
+
+    <div class="w-full max-w-xs space-y-3">
+        <input type="email" id="login-email" placeholder="Seu e-mail"
+            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:bg-dark-surface dark:border-dark-border dark:text-white">
+        <input type="password" id="login-password" placeholder="Sua senha"
+            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:bg-dark-surface dark:border-dark-border dark:text-white">
+        <div class="grid grid-cols-2 gap-3 pt-2">
+            <button onclick="loginWithEmail()"
+                class="bg-primary-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-primary-700 transition-all active:scale-95">Entrar</button>
+            <button onclick="registerWithEmail()"
+                class="bg-gray-800 text-white py-3 rounded-xl font-bold shadow-md hover:bg-gray-900 transition-all dark:bg-gray-700 active:scale-95">Criar
+                Conta</button>
+        </div>
+    </div>
+    <div id="login-loading" class="hidden mt-6 text-primary-500">
+        <i class="fas fa-circle-notch fa-spin text-2xl"></i>
+    </div>
+</section>

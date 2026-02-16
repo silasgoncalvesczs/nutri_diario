@@ -1,0 +1,18 @@
+<section id="calculator-screen" class="page-section">
+    <div
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 dark:bg-dark-surface dark:border-dark-border">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">O que você comeu?</h2>
+        <input type="text" id="ing-name" placeholder="Ex: Abacate..."
+            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3 dark:bg-dark-bg dark:text-white">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <input type="number" id="ing-qtd" value="100"
+                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 dark:bg-dark-bg dark:text-white">
+            <select id="ing-unit"
+                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 dark:bg-dark-bg dark:text-white">
+                <option value="g">Gramas (g)</option>
+                <option value="uni">Unidade(s)</option>
+            </select>
+        </div>
+        <button onclick="addIngredient()" class="w-full bg-gray-800 text-white py-3 rounded-lg">Adicionar</button>
+    </div>
+</section>
