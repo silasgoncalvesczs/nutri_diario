@@ -24,15 +24,14 @@ export default async function handler(req, res) {
     }
 
     try {
-        // A MÁGICA 1: O .trim() limpa qualquer espaço ou quebra de linha invisível da sua chave
-        const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+        // Pega a chave do Groq que configuramos na Vercel
+        const apiKey = (process.env.GROQ_API_KEY || "").trim();
 
         if (!apiKey) {
-            return res.status(500).json({ error: { message: "Chave da API do Gemini não configurada." } });
+            return res.status(500).json({ error: { message: "Chave da API do Groq não configurada no servidor (GROQ_API_KEY)." } });
         }
 
-        const promptText = `
-Você é um nutricionista técnico. Analise os ingredientes abaixo e retorne APENAS um array JSON cru.
+        const systemPrompt = `Você é um nutricionista técnico. Analise os ingredientes e retorne APENAS um array JSON cru.
 NÃO use markdown (sem \`\`\`json). NÃO explique nada.
 Formato obrigatório exato:
 [
@@ -45,48 +44,37 @@ Formato obrigatório exato:
         "fiber": 0
     }
 ]
-Use números (inteiros ou decimais) para os macros.
+Use números para os macros.`;
 
-Ingredientes para analisar:
-${prompt}
-        `;
-
-        // A MÁGICA 2: Trocamos o 'v1beta' pelo 'v1' (versão oficial, estável e global)
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // URL oficial da API do Groq (que simula a OpenAI)
+        const url = `https://api.groq.com/openai/v1/chat/completions`;
 
         const response = await fetch(url, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: promptText }]
-                }]
+                model: "llama3-8b-8192", // Modelo gratuito e ultrarrápido do Groq
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `Ingredientes:\n${prompt}` }
+                ],
+                temperature: 0.1 // Mantém a IA focada apenas em dados, sem inventar texto
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("ERRO GEMINI:", data);
-            return res.status(500).json({ error: { message: data.error?.message || "Erro na API do Gemini" } });
+            console.error("ERRO GROQ:", data);
+            return res.status(response.status).json({ error: { message: data.error?.message || "Erro na API do Groq" } });
         }
 
-        const textResponse = data.candidates[0].content.parts[0].text;
-
-        // Formata igual a OpenAI para o seu frontend não quebrar
-        const formatForFrontend = {
-            choices: [
-                {
-                    message: {
-                        content: textResponse
-                    }
-                }
-            ]
-        };
-
-        return res.status(200).json(formatForFrontend);
+        // Como o Groq devolve no formato idêntico ao da OpenAI, 
+        // basta repassar a resposta direto para o seu script.js!
+        return res.status(200).json(data);
 
     } catch (err) {
         console.error("ERRO BACKEND:", err);
