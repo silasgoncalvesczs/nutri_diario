@@ -267,23 +267,22 @@ window.previewAvatar = (event) => {
 window.saveProfile = async () => {
     if (!currentUser) return;
     const newName = document.getElementById("profile-name").value.trim();
-
     const btn = document.getElementById("btn-save-profile");
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
     btn.disabled = true;
 
     try {
-        // 1. Atualiza apenas o NOME no Firebase Auth
-        if (newName) {
+        // Atualiza o NOME no Auth
+        if (newName && newName !== currentUser.displayName) {
             await currentUser.updateProfile({ displayName: newName });
         }
 
-        // 2. Salva a FOTO GIGANTE no Banco de Dados (Firestore)
+        // Salva a FOTO no Banco de Dados com segurança
         if (tempAvatarBase64) {
             await DB.saveUserProfilePhoto(currentUser.uid, tempAvatarBase64);
 
-            // Atualiza a foto pequena lá no cabeçalho do app na mesma hora
+            // Força a troca da fotinha lá em cima na mesma hora!
             const avatarEl = document.getElementById('user-avatar');
             if (avatarEl) {
                 avatarEl.src = tempAvatarBase64;
@@ -295,7 +294,7 @@ window.saveProfile = async () => {
         showToast("Perfil atualizado com sucesso!", "success");
     } catch (error) {
         console.error(error);
-        showToast("Erro ao atualizar o perfil.", "error");
+        showToast("Erro ao atualizar o perfil. Tente novamente.", "error");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -349,23 +348,34 @@ window.addEventListener("DOMContentLoaded", async () => {
 async function loadDataFromCloud() {
     if (!currentUser) return;
 
-    // Carrega Metas
+    // 1. Carrega Metas
     const goals = await DB.getUserGoals(currentUser.uid);
     if (goals) globalGoals = goals;
     else await DB.saveUserGoals(currentUser.uid, globalGoals);
 
-    // NOVO: Carrega a foto do Banco de Dados
+    // 2. A MÁGICA DA FOTO: Busca do Banco de Dados
     const savedPhoto = await DB.getUserProfilePhoto(currentUser.uid);
     if (savedPhoto) {
-        tempAvatarBase64 = savedPhoto; // Guarda na memória
+        tempAvatarBase64 = savedPhoto; // Guarda na memória para o app não esquecer
+
+        // Troca a foto do cabeçalho pela foto do banco
         const avatarEl = document.getElementById('user-avatar');
         if (avatarEl) {
             avatarEl.src = savedPhoto;
             avatarEl.classList.remove('hidden');
             document.getElementById('user-avatar-fallback').classList.add('hidden');
         }
+    } else if (currentUser.photoURL) {
+        // Se não tem no banco, usa a do Google
+        const avatarEl = document.getElementById('user-avatar');
+        if (avatarEl) {
+            avatarEl.src = currentUser.photoURL;
+            avatarEl.classList.remove('hidden');
+            document.getElementById('user-avatar-fallback').classList.add('hidden');
+        }
     }
 
+    // 3. Carrega Refeições
     globalMeals = await DB.getMeals(currentUser.uid);
     updateDashboard();
     loadHistory();
@@ -481,21 +491,25 @@ function updateChart(meals) {
 }
 
 function loadSettingsInputs() {
-    // Carrega as Metas (já existia)
     document.getElementById("goal-cals").value = globalGoals.calories;
     document.getElementById("goal-prot").value = globalGoals.protein;
     document.getElementById("goal-carbs").value = globalGoals.carbs;
     document.getElementById("goal-fats").value = globalGoals.fats;
     document.getElementById("goal-fibers").value = globalGoals.fibers;
 
-    // NOVO: Carrega os dados do Perfil
     if (currentUser) {
         document.getElementById("profile-name").value = currentUser.displayName || "";
 
-        if (currentUser.photoURL) {
-            document.getElementById("settings-avatar").src = currentUser.photoURL;
-            document.getElementById("settings-avatar").classList.remove("hidden");
-            document.getElementById("settings-avatar-fallback").classList.add("hidden");
+        // Prioridade 1: Foto que puxamos do Banco. Prioridade 2: Google.
+        const photoToShow = tempAvatarBase64 || currentUser.photoURL;
+
+        if (photoToShow) {
+            const settingsAvatar = document.getElementById("settings-avatar");
+            if (settingsAvatar) {
+                settingsAvatar.src = photoToShow;
+                settingsAvatar.classList.remove("hidden");
+                document.getElementById("settings-avatar-fallback").classList.add("hidden");
+            }
         }
     }
 }

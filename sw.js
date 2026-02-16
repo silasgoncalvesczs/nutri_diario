@@ -3,8 +3,8 @@
    Cache atualizado para a nova arquitetura modular
    ============================================================ */
 
-// Mudamos para v2 para forçar o navegador a atualizar o cache antigo
-const CACHE_NAME = "nutridiario-cache-v2";
+// Mude apenas a primeira linha do seu sw.js para v3:
+const CACHE_NAME = "nutridiario-cache-v3";
 
 const FILES_TO_CACHE = [
   "./",
