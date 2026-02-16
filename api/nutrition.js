@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
-    // 1. Configuração de CORS (Permite que o app no GitHub Pages acesse este backend)
+    // 1. Configuração de CORS (Permite que o app acesse este backend)
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); 
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -25,7 +25,13 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 2. Prompt do Sistema: Garante que a IA responda APENAS o JSON numérico
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return res.status(500).json({ error: { message: "Chave da API do Gemini não configurada no servidor." } });
+        }
+
+        // 2. Prompt do Sistema
         const systemPrompt = `
             Você é um nutricionista técnico. Analise os ingredientes e retorne APENAS um array JSON cru.
             NÃO use markdown (sem \`\`\`json). NÃO explique nada.
@@ -43,32 +49,55 @@ export default async function handler(req, res) {
             Use números (inteiros ou decimais) para os macros. Se for unidade vaga (ex: "1 maçã"), estime a média.
         `;
 
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        // Usamos o modelo gemini-1.5-flash, que é extremamente rápido e excelente para JSON
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+        const response = await fetch(url, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini", // Modelo mais rápido e barato
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: prompt }
-                ],
-                temperature: 0.1
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json", // Força o Gemini a cuspir um JSON perfeito
+                    temperature: 0.1
+                }
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(500).json({ error: data });
+            console.error("ERRO GEMINI:", data);
+            return res.status(500).json({ error: { message: data.error?.message || "Erro na API do Gemini" } });
         }
 
-        return res.status(200).json(data);
+        // 3. Extrai o texto da resposta do Gemini
+        const textResponse = data.candidates[0].content.parts[0].text;
+
+        // 4. TRUQUE DE MESTRE: Formatar a resposta igual à da OpenAI!
+        // Assim o seu arquivo script.js (frontend) não precisa ser alterado de jeito nenhum.
+        const formatForFrontend = {
+            choices: [
+                {
+                    message: {
+                        content: textResponse
+                    }
+                }
+            ]
+        };
+
+        return res.status(200).json(formatForFrontend);
 
     } catch (err) {
         console.error("ERRO BACKEND:", err);
-        return res.status(500).json({ error: "Erro interno do servidor." });
+        return res.status(500).json({ error: { message: "Erro interno do servidor backend." } });
     }
 }
