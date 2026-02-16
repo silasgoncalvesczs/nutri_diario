@@ -38,7 +38,16 @@ window.loginWithEmail = async () => {
         document.getElementById("login-password").value = "";
     } catch (error) {
         document.getElementById("login-loading").classList.add("hidden");
-        showToast("Erro ao fazer login. Verifique suas credenciais.", "error");
+        console.error("Erro no login:", error);
+
+        // Tratamento de erros amigável para o Login
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            showToast("Senha incorreta. Se você usou o Google antes, clique em 'Entrar com Google'.", "error");
+        } else if (error.code === 'auth/user-not-found') {
+            showToast("Conta não encontrada. Clique em 'Cadastre-se agora'.", "error");
+        } else {
+            showToast("Erro ao fazer login. Verifique seus dados.", "error");
+        }
     }
 };
 
@@ -46,7 +55,7 @@ window.registerWithEmail = async () => {
     const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value.trim();
     if (!email || !password) return showToast("Preencha e-mail e senha.", "error");
-    if (password.length < 6) return showToast("Mínimo 6 caracteres.", "error");
+    if (password.length < 6) return showToast("A senha deve ter no mínimo 6 caracteres.", "error");
 
     document.getElementById("login-loading").classList.remove("hidden");
     try {
@@ -56,7 +65,16 @@ window.registerWithEmail = async () => {
         document.getElementById("login-password").value = "";
     } catch (error) {
         document.getElementById("login-loading").classList.add("hidden");
-        showToast("Erro ao criar conta.", "error");
+        console.error("Erro no cadastro:", error);
+
+        // Tratamento de erros amigável para o Cadastro
+        if (error.code === 'auth/email-already-in-use') {
+            showToast("Este e-mail já está em uso! Tente 'Entrar com Google'.", "error");
+        } else if (error.code === 'auth/invalid-email') {
+            showToast("Formato de e-mail inválido.", "error");
+        } else {
+            showToast("Erro ao criar conta. Tente novamente.", "error");
+        }
     }
 };
 
