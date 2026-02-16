@@ -177,9 +177,21 @@ async function calculateNutrition() {
             body: JSON.stringify({ prompt: ingredientsText })
         });
 
-        if (!response.ok) throw new Error("Erro servidor");
-
         const data = await response.json();
+
+        // 1. LOG PARA DEBUG: Isso vai mostrar exatamente o que o servidor devolveu
+        console.log("🕵️ Resposta da API:", data);
+
+        if (!response.ok) {
+            // Se o servidor avisou que deu erro, disparamos o erro com a mensagem real
+            throw new Error(data.error?.message || JSON.stringify(data.error) || "Erro desconhecido no servidor");
+        }
+
+        // 2. Verifica se a OpenAI realmente mandou o texto esperado
+        if (!data.choices || data.choices.length === 0) {
+            throw new Error("A OpenAI não retornou os dados no formato esperado.");
+        }
+
         let text = data.choices[0].message.content.replace(/```json|```/g, "").trim();
         const jsonStr = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
         const results = JSON.parse(jsonStr);
@@ -213,8 +225,9 @@ async function calculateNutrition() {
         showToast("Calculado!", "success");
 
     } catch (err) {
-        console.error(err);
-        showToast("Erro ao calcular. Tente novamente.", "error");
+        console.error("🔴 ERRO CAPTURADO:", err);
+        // Agora o Toast vai tentar mostrar o erro real pra você
+        showToast("Erro: " + err.message, "error");
     } finally {
         btn.innerHTML = originalContent;
         btn.disabled = false;
