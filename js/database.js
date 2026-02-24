@@ -54,3 +54,8 @@ export async function getUserProfileData(userId) {
 export async function saveUserProfileData(userId, profileData) {
     return db.collection("users").doc(userId).set({ profile: profileData }, { merge: true });
 }
+
+// Atualiza uma refeição existente
+export async function updateMealInCloud(userId, mealId, mealData) {
+    return db.collection("users").doc(userId).collection("meals").doc(mealId).set(mealData, { merge: true });
+}

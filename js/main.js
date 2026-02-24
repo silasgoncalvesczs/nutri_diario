@@ -14,6 +14,7 @@ let historyChart = null;
 let currentDashboardDate = new Date(); // Controle de data do painel
 let globalProfileData = {}; // Dados físicos (Idade, Peso, etc)
 let tempAvatarBase64 = null; // Guarda a foto comprimida antes de salvar
+let editingMealId = null; // Controle de edição de refeição
 
 /* ============================================================
    EXPOSIÇÃO DE FUNÇÕES AO WINDOW (Para o HTML conseguir clicar)
@@ -122,8 +123,10 @@ window.removeIngredient = (idx) => {
     resetSaveButton();
 };
 
+// ATUALIZADO: Limpa a lista e sai do modo de edição
 window.clearIngredients = () => {
     currentIngredients = [];
+    editingMealId = null; // Sai do modo de edição
     updateIngredientList();
     document.getElementById("calc-results").classList.add("hidden");
     resetSaveButton();
@@ -171,6 +174,7 @@ window.calculateNutrition = async () => {
     }
 };
 
+// ATUALIZADO: Salva ou Atualiza a refeição baseada na variável editingMealId
 window.saveMeal = async () => {
     if (!lastCalculatedTotals || !currentUser) return;
     const btnSave = document.getElementById("btn-save");
@@ -178,14 +182,23 @@ window.saveMeal = async () => {
     btnSave.disabled = true;
 
     try {
+        const originalMeal = editingMealId ? globalMeals.find(m => m.id === editingMealId) : null;
+
         const mealData = {
-            timestamp: Date.now(),
-            date: new Date().toLocaleString("pt-BR"),
+            timestamp: originalMeal ? originalMeal.timestamp : Date.now(),
+            date: originalMeal ? originalMeal.date : new Date().toLocaleString("pt-BR"),
             ingredients: [...currentIngredients],
             totals: lastCalculatedTotals
         };
-        await DB.saveMealToCloud(currentUser.uid, mealData);
-        showToast("Salvo na nuvem!", "success");
+
+        if (editingMealId) {
+            await DB.updateMealInCloud(currentUser.uid, editingMealId, mealData);
+            showToast("Refeição atualizada!", "success");
+        } else {
+            await DB.saveMealToCloud(currentUser.uid, mealData);
+            showToast("Salvo na nuvem!", "success");
+        }
+
         window.clearIngredients();
         await loadDataFromCloud();
         window.navigateTo("home");
@@ -193,6 +206,25 @@ window.saveMeal = async () => {
         showToast("Erro ao salvar refeição.", "error");
         resetSaveButton();
     }
+};
+
+// NOVO: Função para colocar o app no Modo de Edição
+window.editMeal = (mealId) => {
+    const mealToEdit = globalMeals.find(m => m.id === mealId);
+    if (!mealToEdit) return;
+
+    // Joga os ingredientes de volta pra tela
+    currentIngredients = [...mealToEdit.ingredients];
+    updateIngredientList();
+
+    // Entra no modo de edição
+    editingMealId = mealId;
+
+    document.getElementById("calc-results").classList.add("hidden");
+    resetSaveButton();
+    window.navigateTo('calculator');
+
+    showToast("Edite as quantidades e calcule novamente.", "success");
 };
 
 window.deleteMeal = async (mealId) => {
@@ -411,7 +443,7 @@ async function loadDataFromCloud() {
     if (goals) globalGoals = goals;
     else await DB.saveUserGoals(currentUser.uid, globalGoals);
 
-    // 2. Busca Dados Físicos (Novo!)
+    // 2. Busca Dados Físicos
     const savedProfile = await DB.getUserProfileData(currentUser.uid);
     if (savedProfile) globalProfileData = savedProfile;
 
@@ -499,6 +531,7 @@ function updateMacroCard(elementId, current, goal) {
     safeSetText(`${elementId}-goal`, goal > 0 ? goal : '-');
 }
 
+// ATUALIZADO: Renderização do histórico com botão Editar
 function loadHistory() {
     const container = document.getElementById("history-list");
     if (globalMeals.length === 0) {
@@ -520,9 +553,15 @@ function loadHistory() {
                     </div>
                     <strong class="text-gray-800 dark:text-white font-bold tracking-wide">${m.date}</strong>
                 </div>
-                <button onclick="deleteMeal('${m.id}')" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 hover:bg-red-50 dark:bg-dark-bg dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">
-                    Excluir
-                </button>
+                
+                <div class="flex gap-2">
+                    <button onclick="editMeal('${m.id}')" class="text-gray-400 hover:text-blue-500 transition-colors bg-gray-50 hover:bg-blue-50 dark:bg-dark-bg dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">
+                        Editar
+                    </button>
+                    <button onclick="deleteMeal('${m.id}')" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 hover:bg-red-50 dark:bg-dark-bg dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">
+                        Excluir
+                    </button>
+                </div>
             </div>
             <div class="text-sm text-gray-500 mb-5 dark:text-gray-400 px-1 leading-relaxed border-l-2 border-gray-100 dark:border-dark-border pl-3">
                 ${m.ingredients.map(i => `<span class="font-medium text-gray-600 dark:text-gray-300">${i.quantity}${i.unit}</span> ${i.name}`).join(" &bull; ")}
@@ -613,7 +652,7 @@ function loadSettingsInputs() {
         }
     }
 
-    // 3. Preenche Dados Físicos (NOVO)
+    // 3. Preenche Dados Físicos
     if (globalProfileData) {
         const ageEl = document.getElementById("profile-age");
         const genderEl = document.getElementById("profile-gender");
@@ -625,7 +664,7 @@ function loadSettingsInputs() {
         if (weightEl && globalProfileData.weight) weightEl.value = globalProfileData.weight;
         if (heightEl && globalProfileData.height) heightEl.value = globalProfileData.height;
 
-        window.calculateIMC(); // Chama o cálculo visual do card
+        window.calculateIMC();
     }
 }
 
