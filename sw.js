@@ -3,7 +3,7 @@
    Cache atualizado para a nova arquitetura modular
    ============================================================ */
 
-const CACHE_NAME = "nutridiario-cache-v5";
+const CACHE_NAME = "nutridiario-cache-v6";
 
 const FILES_TO_CACHE = [
   "./",

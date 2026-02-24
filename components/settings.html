@@ -75,11 +75,62 @@
             Atualizar Perfil
         </button>
 
+        <div id="install-app-container"
+            class="hidden bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl p-4 mb-6 mt-6 shadow-lg shadow-primary-500/30 text-white flex items-center justify-between transition-all">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <i class="fas fa-mobile-alt text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">Instalar NutriDiário</h4>
+                    <p class="text-[10px] text-primary-100">Adicione à tela inicial</p>
+                </div>
+            </div>
+            <button onclick="installApp()"
+                class="bg-white text-primary-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 active:scale-95 transition-all shadow-sm">
+                Baixar App
+            </button>
+        </div>
+
         <div class="w-full h-px bg-gray-100 dark:bg-dark-border mb-8"></div>
 
         <h2 class="text-xl font-bold text-gray-800 mb-5 dark:text-white flex items-center gap-2">
             <i class="fas fa-bullseye text-primary-500"></i> Minhas Metas
         </h2>
+
+        <div
+            class="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4 mb-5 border border-primary-100 dark:border-primary-900/50">
+            <h3 class="text-sm font-bold text-primary-700 dark:text-primary-400 mb-3 flex items-center gap-2">
+                <i class="fas fa-magic"></i> Auto-Calcular Metas
+            </h3>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label
+                        class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Atividade</label>
+                    <select id="auto-activity"
+                        class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
+                        <option value="1.2">Sedentário</option>
+                        <option value="1.375">Leve (1-3x/sem)</option>
+                        <option value="1.55">Moderado (3-5x/sem)</option>
+                        <option value="1.725">Intenso (Todo dia)</option>
+                    </select>
+                </div>
+                <div>
+                    <label
+                        class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Objetivo</label>
+                    <select id="auto-goal"
+                        class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
+                        <option value="-500">Perder Peso</option>
+                        <option value="0">Manter Peso</option>
+                        <option value="500">Ganhar Massa</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="autoCalculateGoals()"
+                class="w-full bg-primary-100 text-primary-700 font-bold py-2 rounded-lg text-sm hover:bg-primary-200 transition-colors dark:bg-primary-800 dark:text-primary-200 dark:hover:bg-primary-700 active:scale-95">
+                Gerar Minhas Metas
+            </button>
+        </div>
 
         <div class="space-y-5">
             <div>

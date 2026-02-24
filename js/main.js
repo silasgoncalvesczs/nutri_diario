@@ -11,10 +11,11 @@ let lastCalculatedTotals = null;
 let globalMeals = [];
 let globalGoals = { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
 let historyChart = null;
-let currentDashboardDate = new Date(); // Controle de data do painel
-let globalProfileData = {}; // Dados físicos (Idade, Peso, etc)
-let tempAvatarBase64 = null; // Guarda a foto comprimida antes de salvar
-let editingMealId = null; // Controle de edição de refeição
+let currentDashboardDate = new Date();
+let globalProfileData = {};
+let tempAvatarBase64 = null;
+let editingMealId = null;
+let deferredPrompt = null;
 
 /* ============================================================
    EXPOSIÇÃO DE FUNÇÕES AO WINDOW (Para o HTML conseguir clicar)
@@ -348,6 +349,79 @@ window.calculateIMC = () => {
     } else if (imcCard) {
         imcCard.classList.add("hidden");
     }
+};
+
+window.autoCalculateGoals = () => {
+    // 1. Verifica se os dados do perfil estão preenchidos
+    const age = parseInt(document.getElementById("profile-age").value);
+    const gender = document.getElementById("profile-gender").value;
+    const weight = safeParseFloat(document.getElementById("profile-weight").value);
+    const height = safeParseFloat(document.getElementById("profile-height").value);
+
+    if (!age || !gender || !weight || !height) {
+        return showToast("Preencha idade, gênero, peso e altura primeiro!", "error");
+    }
+
+    // 2. Fatores escolhidos pelo usuário
+    const activityMultiplier = safeParseFloat(document.getElementById("auto-activity").value);
+    const goalModifier = safeParseFloat(document.getElementById("auto-goal").value);
+
+    // 3. Equação de Mifflin-St Jeor para Taxa Metabólica Basal (TMB)
+    let tmb = (10 * weight) + (6.25 * height) - (5 * age);
+    tmb = gender === 'M' ? tmb + 5 : tmb - 161;
+
+    // 4. Calcula o Gasto Calórico Total Diário e aplica o Objetivo (+ ou - 500 kcal)
+    let targetCalories = Math.round((tmb * activityMultiplier) + goalModifier);
+
+    // Segurança: Nunca recomendar menos que 1200 kcal
+    if (targetCalories < 1200) targetCalories = 1200;
+
+    // 5. Distribuição Inteligente de Macros
+    // Proteína: ~2g por kg corporal
+    const targetProtein = Math.round(weight * 2.0);
+    // Gordura: ~1g por kg corporal
+    const targetFats = Math.round(weight * 1.0);
+    // Carboidratos: O resto das calorias (1g prot = 4kcal, 1g gord = 9kcal, 1g carb = 4kcal)
+    const caloriesFromProtAndFat = (targetProtein * 4) + (targetFats * 9);
+    const targetCarbs = Math.round((targetCalories - caloriesFromProtAndFat) / 4);
+
+    // 6. Preenche os inputs na tela (o usuário ainda precisa clicar em "Salvar Metas")
+    document.getElementById("goal-cals").value = targetCalories;
+    document.getElementById("goal-prot").value = targetProtein;
+    document.getElementById("goal-carbs").value = targetCarbs > 0 ? targetCarbs : 50; // Mínimo de segurança
+    document.getElementById("goal-fats").value = targetFats;
+    document.getElementById("goal-fibers").value = 30; // Padrão recomendado
+
+    // Animação para mostrar que atualizou
+    showToast("Metas calculadas! Clique em 'Salvar Metas' para confirmar.", "success");
+
+    // Dá um destaque visual rápido nos campos
+    const inputs = ["goal-cals", "goal-prot", "goal-carbs", "goal-fats", "goal-fibers"];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add("ring-2", "ring-green-500", "bg-green-50", "dark:bg-green-900/20");
+        setTimeout(() => el.classList.remove("ring-2", "ring-green-500", "bg-green-50", "dark:bg-green-900/20"), 1500);
+    });
+};
+
+window.installApp = async () => {
+    if (!deferredPrompt) return;
+
+    // Mostra o prompt nativo do celular (aquela janelinha do Android/iOS)
+    deferredPrompt.prompt();
+
+    // Espera a pessoa clicar em "Instalar" ou "Cancelar"
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+        console.log('Usuário instalou o app!');
+        // Esconde o botão depois que instalou
+        const container = document.getElementById('install-app-container');
+        if (container) container.classList.add('hidden');
+    }
+
+    // Limpa a variável para não disparar duas vezes
+    deferredPrompt = null;
 };
 
 window.saveProfile = async () => {
@@ -732,3 +806,17 @@ function animateValue(id, val) {
     const el = document.getElementById(id);
     if (el) el.innerText = Math.round(val);
 }
+
+// Fica escutando se o navegador permite instalação (PWA)
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Previne o Chrome de mostrar a barrinha feia padrão
+    e.preventDefault();
+    // Guarda o evento para usarmos no botão
+    deferredPrompt = e;
+
+    // Mostra o nosso card bonitão na aba de configurações
+    const installContainer = document.getElementById('install-app-container');
+    if (installContainer) {
+        installContainer.classList.remove('hidden');
+    }
+});
