@@ -2,81 +2,189 @@
     <div
         class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
 
-        <h2 class="text-xl font-bold text-gray-800 mb-5 dark:text-white flex items-center gap-2">
-            <i class="fas fa-user-circle text-primary-500"></i> Meu Perfil
-        </h2>
+        <div class="flex bg-gray-100 p-1 rounded-xl mb-6 dark:bg-dark-bg">
+            <button onclick="switchSettingsTab('profile')" id="btn-tab-profile"
+                class="flex-1 py-2 text-sm font-bold rounded-lg bg-white text-primary-600 shadow-sm dark:bg-dark-surface dark:text-primary-400 transition-all">
+                Meu Perfil
+            </button>
+            <button onclick="switchSettingsTab('goals')" id="btn-tab-goals"
+                class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all">
+                Minhas Metas
+            </button>
+        </div>
 
-        <div class="flex items-center gap-4 mb-6">
-            <div class="relative">
-                <img id="settings-avatar" src=""
-                    class="w-20 h-20 rounded-full border-2 border-primary-500 object-cover shadow-sm hidden">
-                <div id="settings-avatar-fallback"
-                    class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 dark:bg-dark-bg border-2 border-dashed border-gray-300 dark:border-dark-border">
-                    <i class="fas fa-user text-3xl"></i>
+        <div id="tab-profile" class="block animate-fade-in">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="relative">
+                    <img id="settings-avatar" src=""
+                        class="w-20 h-20 rounded-full border-2 border-primary-500 object-cover shadow-sm hidden">
+                    <div id="settings-avatar-fallback"
+                        class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 dark:bg-dark-bg border-2 border-dashed border-gray-300 dark:border-dark-border">
+                        <i class="fas fa-user text-3xl"></i>
+                    </div>
+                    <label for="avatar-upload"
+                        class="absolute bottom-0 right-0 bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary-700 hover:scale-105 transition-all">
+                        <i class="fas fa-camera text-sm"></i>
+                    </label>
+                    <input type="file" id="avatar-upload" accept="image/*" class="hidden"
+                        onchange="previewAvatar(event)">
                 </div>
 
-                <label for="avatar-upload"
-                    class="absolute bottom-0 right-0 bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary-700 hover:scale-105 transition-all">
-                    <i class="fas fa-camera text-sm"></i>
-                </label>
-                <input type="file" id="avatar-upload" accept="image/*" class="hidden" onchange="previewAvatar(event)">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Como quer ser
+                        chamado?</label>
+                    <input type="text" id="profile-name" placeholder="Seu nome"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                </div>
             </div>
 
-            <div class="flex-1">
-                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Como quer ser
-                    chamado?</label>
-                <input type="text" id="profile-name" placeholder="Seu nome"
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-5">
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Idade (anos)</label>
-                <input type="number" id="profile-age" placeholder="Ex: 28"
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Gênero</label>
-                <select id="profile-gender"
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                    <option value="">Selecione...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Feminino</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Peso (kg)</label>
-                <input type="number" id="profile-weight" placeholder="Ex: 75.5" step="0.1" oninput="calculateIMC()"
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Altura (cm)</label>
-                <input type="number" id="profile-height" placeholder="Ex: 175" oninput="calculateIMC()"
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-            </div>
-        </div>
-
-        <div id="imc-card"
-            class="bg-primary-50 rounded-xl p-4 mb-6 border border-primary-100 dark:bg-primary-900/20 dark:border-primary-900/50 hidden transition-all">
-            <div class="flex justify-between items-center">
+            <div class="grid grid-cols-2 gap-4 mb-5">
                 <div>
-                    <h4 class="text-primary-700 font-bold text-sm flex items-center gap-2 dark:text-primary-400">
-                        <i class="fas fa-weight"></i> Seu IMC
-                    </h4>
-                    <p id="imc-status" class="text-xs font-bold mt-1">--</p>
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Idade (anos)</label>
+                    <input type="number" id="profile-age" placeholder="Ex: 28"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
                 </div>
-                <div class="text-3xl font-black text-primary-600 dark:text-primary-400" id="imc-value">--</div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Gênero</label>
+                    <select id="profile-gender"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                        <option value="">Selecione...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Peso (kg)</label>
+                    <input type="number" id="profile-weight" placeholder="Ex: 75.5" step="0.1" oninput="calculateIMC()"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Altura (cm)</label>
+                    <input type="number" id="profile-height" placeholder="Ex: 175" oninput="calculateIMC()"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                </div>
+            </div>
+
+            <div id="imc-card"
+                class="bg-primary-50 rounded-xl p-4 mb-6 border border-primary-100 dark:bg-primary-900/20 dark:border-primary-900/50 hidden transition-all">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="text-primary-700 font-bold text-sm flex items-center gap-2 dark:text-primary-400">
+                            <i class="fas fa-weight"></i> Seu IMC
+                        </h4>
+                        <p id="imc-status" class="text-xs font-bold mt-1">--</p>
+                    </div>
+                    <div class="text-3xl font-black text-primary-600 dark:text-primary-400" id="imc-value">--</div>
+                </div>
+            </div>
+
+            <button onclick="saveProfile()" id="btn-save-profile"
+                class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-900 transition-colors mb-6 dark:bg-primary-600 dark:hover:bg-primary-700 active:scale-95">
+                Atualizar Perfil
+            </button>
+
+            <div class="pt-4 border-t border-gray-100 dark:border-dark-border">
+                <button onclick="logout()"
+                    class="w-full text-red-500 text-sm font-bold hover:text-red-600 py-3 border border-red-100 rounded-xl dark:border-red-900/30 dark:bg-red-900/10 transition-colors active:scale-95">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Sair da Conta
+                </button>
             </div>
         </div>
 
-        <button onclick="saveProfile()" id="btn-save-profile"
-            class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow-md hover:bg-gray-900 transition-colors mb-8 dark:bg-primary-600 dark:hover:bg-primary-700 active:scale-95">
-            Atualizar Perfil
-        </button>
+        <div id="tab-goals" class="hidden animate-fade-in">
+            <div
+                class="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4 mb-5 border border-primary-100 dark:border-primary-900/50">
+                <h3 class="text-sm font-bold text-primary-700 dark:text-primary-400 mb-3 flex items-center gap-2">
+                    <i class="fas fa-magic"></i> Auto-Calcular Metas
+                </h3>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label
+                            class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Atividade</label>
+                        <select id="auto-activity"
+                            class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
+                            <option value="1.2">Sedentário</option>
+                            <option value="1.375">Leve (1-3x/sem)</option>
+                            <option value="1.55">Moderado (3-5x/sem)</option>
+                            <option value="1.725">Intenso (Todo dia)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Objetivo</label>
+                        <select id="auto-goal"
+                            class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
+                            <option value="-500">Perder Peso</option>
+                            <option value="0">Manter Peso</option>
+                            <option value="500">Ganhar Massa</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="autoCalculateGoals()"
+                    class="w-full bg-primary-100 text-primary-700 font-bold py-2 rounded-lg text-sm hover:bg-primary-200 transition-colors dark:bg-primary-800 dark:text-primary-200 dark:hover:bg-primary-700 active:scale-95">
+                    Gerar Minhas Metas
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Meta Diária de
+                        Calorias</label>
+                    <div class="relative">
+                        <input type="number" id="goal-cals"
+                            class="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                        <span class="absolute right-4 top-3.5 text-gray-400 text-sm">kcal</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Proteínas</label>
+                        <div class="relative">
+                            <input type="number" id="goal-prot"
+                                class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                            <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Carboidratos</label>
+                        <div class="relative">
+                            <input type="number" id="goal-carbs"
+                                class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                            <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Gorduras</label>
+                        <div class="relative">
+                            <input type="number" id="goal-fats"
+                                class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                            <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1 dark:text-gray-400">Fibras</label>
+                        <div class="relative">
+                            <input type="number" id="goal-fibers"
+                                class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
+                            <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="saveSettings()"
+                    class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-colors mt-4 dark:shadow-none active:scale-95">
+                    Salvar Metas
+                </button>
+            </div>
+        </div>
 
         <div id="install-app-container"
-            class="hidden bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl p-4 mb-6 mt-6 shadow-lg shadow-primary-500/30 text-white flex items-center justify-between transition-all">
+            class="hidden bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl p-4 mt-6 shadow-lg shadow-primary-500/30 text-white flex items-center justify-between transition-all">
             <div class="flex items-center gap-3">
                 <div class="bg-white/20 p-2 rounded-lg">
                     <i class="fas fa-mobile-alt text-xl"></i>
@@ -92,105 +200,23 @@
             </button>
         </div>
 
-        <div class="w-full h-px bg-gray-100 dark:bg-dark-border mb-8"></div>
-
-        <h2 class="text-xl font-bold text-gray-800 mb-5 dark:text-white flex items-center gap-2">
-            <i class="fas fa-bullseye text-primary-500"></i> Minhas Metas
-        </h2>
-
-        <div
-            class="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4 mb-5 border border-primary-100 dark:border-primary-900/50">
-            <h3 class="text-sm font-bold text-primary-700 dark:text-primary-400 mb-3 flex items-center gap-2">
-                <i class="fas fa-magic"></i> Auto-Calcular Metas
-            </h3>
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                    <label
-                        class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Atividade</label>
-                    <select id="auto-activity"
-                        class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
-                        <option value="1.2">Sedentário</option>
-                        <option value="1.375">Leve (1-3x/sem)</option>
-                        <option value="1.55">Moderado (3-5x/sem)</option>
-                        <option value="1.725">Intenso (Todo dia)</option>
-                    </select>
-                </div>
-                <div>
-                    <label
-                        class="block text-[10px] font-bold text-primary-600 dark:text-primary-300 uppercase mb-1">Objetivo</label>
-                    <select id="auto-goal"
-                        class="w-full bg-white border border-primary-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-bg dark:border-primary-800 dark:text-white">
-                        <option value="-500">Perder Peso</option>
-                        <option value="0">Manter Peso</option>
-                        <option value="500">Ganhar Massa</option>
-                    </select>
-                </div>
-            </div>
-            <button onclick="autoCalculateGoals()"
-                class="w-full bg-primary-100 text-primary-700 font-bold py-2 rounded-lg text-sm hover:bg-primary-200 transition-colors dark:bg-primary-800 dark:text-primary-200 dark:hover:bg-primary-700 active:scale-95">
-                Gerar Minhas Metas
-            </button>
-        </div>
-
-        <div class="space-y-5">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Meta Diária de
-                    Calorias</label>
-                <div class="relative">
-                    <input type="number" id="goal-cals"
-                        class="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none font-bold text-gray-700 dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                    <span class="absolute right-4 top-3.5 text-gray-400 text-sm">kcal</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Proteínas</label>
-                    <div class="relative">
-                        <input type="number" id="goal-prot"
-                            class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                        <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Carboidratos</label>
-                    <div class="relative">
-                        <input type="number" id="goal-carbs"
-                            class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                        <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Gorduras</label>
-                    <div class="relative">
-                        <input type="number" id="goal-fats"
-                            class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                        <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-2 dark:text-gray-400">Fibras</label>
-                    <div class="relative">
-                        <input type="number" id="goal-fibers"
-                            class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm dark:bg-dark-bg dark:border-dark-border dark:text-white">
-                        <span class="absolute right-3 top-2.5 text-gray-400 text-xs">g</span>
-                    </div>
-                </div>
-            </div>
-
-            <button onclick="saveSettings()"
-                class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-colors mt-2 dark:shadow-none active:scale-95">Salvar
-                Metas</button>
-
-            <div class="pt-6 border-t border-gray-100 mt-6 dark:border-dark-border">
-                <button onclick="logout()"
-                    class="w-full text-red-500 text-sm font-bold hover:text-red-600 py-3 border border-red-100 rounded-xl dark:border-red-900/30 dark:bg-red-900/10 transition-colors active:scale-95">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Sair da Conta (Logout)
-                </button>
-            </div>
-        </div>
     </div>
 </section>
+
+<style>
+    @keyframes fadeInTab {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeInTab 0.2s ease-out forwards;
+    }
+</style>
