@@ -43,3 +43,14 @@ export async function getUserProfilePhoto(userId) {
 export async function saveUserProfilePhoto(userId, photoBase64) {
     return db.collection("users").doc(userId).set({ photoBase64 }, { merge: true });
 }
+
+// Busca os dados físicos do perfil
+export async function getUserProfileData(userId) {
+    const docSnap = await db.collection("users").doc(userId).get();
+    return docSnap.exists ? docSnap.data().profile : null;
+}
+
+// Salva os dados físicos no banco
+export async function saveUserProfileData(userId, profileData) {
+    return db.collection("users").doc(userId).set({ profile: profileData }, { merge: true });
+}

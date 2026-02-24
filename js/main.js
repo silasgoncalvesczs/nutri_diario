@@ -11,7 +11,9 @@ let lastCalculatedTotals = null;
 let globalMeals = [];
 let globalGoals = { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
 let historyChart = null;
-let currentDashboardDate = new Date();
+let currentDashboardDate = new Date(); // Controle de data do painel
+let globalProfileData = {}; // Dados físicos (Idade, Peso, etc)
+let tempAvatarBase64 = null; // Guarda a foto comprimida antes de salvar
 
 /* ============================================================
    EXPOSIÇÃO DE FUNÇÕES AO WINDOW (Para o HTML conseguir clicar)
@@ -41,7 +43,6 @@ window.loginWithEmail = async () => {
         document.getElementById("login-loading").classList.add("hidden");
         console.error("Erro no login:", error);
 
-        // Tratamento de erros amigável para o Login
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
             showToast("Senha incorreta. Se você usou o Google antes, clique em 'Entrar com Google'.", "error");
         } else if (error.code === 'auth/user-not-found') {
@@ -68,7 +69,6 @@ window.registerWithEmail = async () => {
         document.getElementById("login-loading").classList.add("hidden");
         console.error("Erro no cadastro:", error);
 
-        // Tratamento de erros amigável para o Cadastro
         if (error.code === 'auth/email-already-in-use') {
             showToast("Este e-mail já está em uso! Tente 'Entrar com Google'.", "error");
         } else if (error.code === 'auth/invalid-email') {
@@ -224,84 +224,6 @@ window.saveSettings = async () => {
     }
 };
 
-// --- NOVO: LÓGICA DO PERFIL ---
-let tempAvatarBase64 = null; // Guarda a foto comprimida antes de salvar
-
-window.previewAvatar = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Usa um FileReader para ler a foto que a pessoa escolheu
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-        // Redimensiona a imagem para não pesar no banco de dados
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_SIZE = 200; // Tamanho ideal para um avatar
-            let width = img.width;
-            let height = img.height;
-
-            // Mantém a proporção e diminui
-            if (width > height) {
-                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-            } else {
-                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Transforma na imagem comprimida e mostra na tela
-            tempAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            document.getElementById('settings-avatar').src = tempAvatarBase64;
-            document.getElementById('settings-avatar').classList.remove('hidden');
-            document.getElementById('settings-avatar-fallback').classList.add('hidden');
-        }
-    };
-};
-
-window.saveProfile = async () => {
-    if (!currentUser) return;
-    const newName = document.getElementById("profile-name").value.trim();
-    const btn = document.getElementById("btn-save-profile");
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
-    btn.disabled = true;
-
-    try {
-        // Atualiza o NOME no Auth
-        if (newName && newName !== currentUser.displayName) {
-            await currentUser.updateProfile({ displayName: newName });
-        }
-
-        // Salva a FOTO no Banco de Dados com segurança
-        if (tempAvatarBase64) {
-            await DB.saveUserProfilePhoto(currentUser.uid, tempAvatarBase64);
-
-            // Força a troca da fotinha lá em cima na mesma hora!
-            const avatarEl = document.getElementById('user-avatar');
-            if (avatarEl) {
-                avatarEl.src = tempAvatarBase64;
-                avatarEl.classList.remove('hidden');
-                document.getElementById('user-avatar-fallback').classList.add('hidden');
-            }
-        }
-
-        showToast("Perfil atualizado com sucesso!", "success");
-    } catch (error) {
-        console.error(error);
-        showToast("Erro ao atualizar o perfil. Tente novamente.", "error");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-};
-
 window.changeDashboardDate = (offset) => {
     currentDashboardDate.setDate(currentDashboardDate.getDate() + offset);
     updateDashboard();
@@ -311,7 +233,6 @@ window.generateAITip = async () => {
     const tipText = document.getElementById("ai-tip-text");
     if (!tipText) return;
 
-    // Pega os valores atuais da tela
     const currentMacros = {
         calories: safeParseFloat(document.getElementById("dashboard-cals").innerText),
         protein: safeParseFloat(document.getElementById("dashboard-protein").innerText),
@@ -330,17 +251,125 @@ window.generateAITip = async () => {
     }
 };
 
+// --- LÓGICA DO PERFIL E IMC ---
+window.previewAvatar = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+            } else {
+                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            tempAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('settings-avatar').src = tempAvatarBase64;
+            document.getElementById('settings-avatar').classList.remove('hidden');
+            document.getElementById('settings-avatar-fallback').classList.add('hidden');
+        }
+    };
+};
+
+window.calculateIMC = () => {
+    const weightInput = document.getElementById("profile-weight");
+    const heightInput = document.getElementById("profile-height");
+    if (!weightInput || !heightInput) return;
+
+    const weight = safeParseFloat(weightInput.value);
+    const heightCm = safeParseFloat(heightInput.value);
+    const imcCard = document.getElementById("imc-card");
+    const imcValue = document.getElementById("imc-value");
+    const imcStatus = document.getElementById("imc-status");
+
+    if (weight > 0 && heightCm > 0 && imcCard && imcValue && imcStatus) {
+        const heightM = heightCm / 100;
+        const imc = weight / (heightM * heightM);
+
+        imcValue.innerText = imc.toFixed(1);
+
+        let status = "";
+        let colorClass = "";
+        if (imc < 18.5) { status = "Abaixo do peso"; colorClass = "text-yellow-600 dark:text-yellow-400"; }
+        else if (imc >= 18.5 && imc < 24.9) { status = "Peso normal"; colorClass = "text-green-600 dark:text-green-400"; }
+        else if (imc >= 25 && imc < 29.9) { status = "Sobrepeso"; colorClass = "text-orange-600 dark:text-orange-400"; }
+        else { status = "Obesidade"; colorClass = "text-red-600 dark:text-red-400"; }
+
+        imcStatus.innerText = status;
+        imcStatus.className = `text-xs font-bold mt-1 ${colorClass}`;
+        imcCard.classList.remove("hidden");
+    } else if (imcCard) {
+        imcCard.classList.add("hidden");
+    }
+};
+
+window.saveProfile = async () => {
+    if (!currentUser) return;
+    const newName = document.getElementById("profile-name").value.trim();
+    const btn = document.getElementById("btn-save-profile");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    btn.disabled = true;
+
+    try {
+        if (newName && newName !== currentUser.displayName) {
+            await currentUser.updateProfile({ displayName: newName });
+        }
+
+        const newProfileData = {
+            age: parseInt(document.getElementById("profile-age").value) || null,
+            gender: document.getElementById("profile-gender").value || "",
+            weight: safeParseFloat(document.getElementById("profile-weight").value) || null,
+            height: safeParseFloat(document.getElementById("profile-height").value) || null
+        };
+
+        await DB.saveUserProfileData(currentUser.uid, newProfileData);
+        globalProfileData = newProfileData;
+
+        if (tempAvatarBase64) {
+            await DB.saveUserProfilePhoto(currentUser.uid, tempAvatarBase64);
+
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) {
+                avatarEl.src = tempAvatarBase64;
+                avatarEl.classList.remove('hidden');
+                document.getElementById('user-avatar-fallback').classList.add('hidden');
+            }
+        }
+
+        showToast("Perfil atualizado com sucesso!", "success");
+    } catch (error) {
+        console.error(error);
+        showToast("Erro ao atualizar o perfil. Tente novamente.", "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
 /* ============================================================
    LÓGICA INTERNA E INICIALIZAÇÃO
    ============================================================ */
 window.addEventListener("DOMContentLoaded", async () => {
-    // 1. PRIMEIRO: Carrega todos os pedaços de HTML
     await UI.loadComponents();
 
-    // 2. SEGUNDO: Aplica o tema escuro/claro
     initTheme();
 
-    // 3. TERCEIRO: Liga o monitor de Autenticação
     Auth.onAuthStateChanged((user) => {
         if (user) {
             currentUser = user;
@@ -357,7 +386,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("app-wrapper").classList.add("flex");
 
             loadDataFromCloud();
-            window.navigateTo("home"); // Garante que vai pra home
+            window.navigateTo("home");
         } else {
             currentUser = null;
             globalMeals = [];
@@ -382,12 +411,15 @@ async function loadDataFromCloud() {
     if (goals) globalGoals = goals;
     else await DB.saveUserGoals(currentUser.uid, globalGoals);
 
-    // 2. A MÁGICA DA FOTO: Busca do Banco de Dados
+    // 2. Busca Dados Físicos (Novo!)
+    const savedProfile = await DB.getUserProfileData(currentUser.uid);
+    if (savedProfile) globalProfileData = savedProfile;
+
+    // 3. Busca a Foto do Banco de Dados
     const savedPhoto = await DB.getUserProfilePhoto(currentUser.uid);
     if (savedPhoto) {
-        tempAvatarBase64 = savedPhoto; // Guarda na memória para o app não esquecer
+        tempAvatarBase64 = savedPhoto;
 
-        // Troca a foto do cabeçalho pela foto do banco
         const avatarEl = document.getElementById('user-avatar');
         if (avatarEl) {
             avatarEl.src = savedPhoto;
@@ -395,7 +427,6 @@ async function loadDataFromCloud() {
             document.getElementById('user-avatar-fallback').classList.add('hidden');
         }
     } else if (currentUser.photoURL) {
-        // Se não tem no banco, usa a do Google
         const avatarEl = document.getElementById('user-avatar');
         if (avatarEl) {
             avatarEl.src = currentUser.photoURL;
@@ -404,7 +435,7 @@ async function loadDataFromCloud() {
         }
     }
 
-    // 3. Carrega Refeições
+    // 4. Carrega Refeições
     globalMeals = await DB.getMeals(currentUser.uid);
     updateDashboard();
     loadHistory();
@@ -416,7 +447,6 @@ function updateDashboard() {
     const dateStr = currentDashboardDate.toLocaleDateString("pt-BR");
     const todayStr = today.toLocaleDateString("pt-BR");
 
-    // 1. Lógica do rótulo da data (Hoje, Ontem, ou DD/MM)
     let label = "Hoje";
     if (dateStr !== todayStr) {
         let yesterday = new Date();
@@ -424,18 +454,16 @@ function updateDashboard() {
         if (dateStr === yesterday.toLocaleDateString("pt-BR")) {
             label = "Ontem";
         } else {
-            label = dateStr.substring(0, 5); // Mostra apenas dia e mês (ex: 20/02)
+            label = dateStr.substring(0, 5);
         }
     }
     safeSetText("dashboard-date-display", label);
 
-    // 2. Filtra as refeições do dia SELECIONADO (não mais apenas 'hoje')
     const targetMeals = globalMeals.filter(m => {
         const dateToCheck = m.timestamp ? new Date(m.timestamp) : new Date();
         return dateToCheck.toLocaleDateString("pt-BR") === dateStr;
     });
 
-    // 3. Soma os macros (o resto da função continua igual)
     let dailyTotals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
     targetMeals.forEach(m => {
         if (m.totals) {
@@ -485,7 +513,6 @@ function loadHistory() {
 
     container.innerHTML = globalMeals.map(m => `
         <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
-            
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-3">
                     <div class="bg-primary-50 dark:bg-primary-900/20 p-2.5 rounded-xl text-primary-600 dark:text-primary-400">
@@ -497,11 +524,9 @@ function loadHistory() {
                     Excluir
                 </button>
             </div>
-            
             <div class="text-sm text-gray-500 mb-5 dark:text-gray-400 px-1 leading-relaxed border-l-2 border-gray-100 dark:border-dark-border pl-3">
                 ${m.ingredients.map(i => `<span class="font-medium text-gray-600 dark:text-gray-300">${i.quantity}${i.unit}</span> ${i.name}`).join(" &bull; ")}
             </div>
-            
             <div class="grid grid-cols-5 gap-2">
                 <div class="flex flex-col items-center justify-center bg-gray-50 dark:bg-dark-bg py-2 rounded-xl border border-gray-100 dark:border-dark-border">
                     <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Kcal</span>
@@ -567,18 +592,17 @@ function updateChart(meals) {
 }
 
 function loadSettingsInputs() {
+    // 1. Preenche as Metas
     document.getElementById("goal-cals").value = globalGoals.calories;
     document.getElementById("goal-prot").value = globalGoals.protein;
     document.getElementById("goal-carbs").value = globalGoals.carbs;
     document.getElementById("goal-fats").value = globalGoals.fats;
     document.getElementById("goal-fibers").value = globalGoals.fibers;
 
+    // 2. Preenche Nome e Foto
     if (currentUser) {
         document.getElementById("profile-name").value = currentUser.displayName || "";
-
-        // Prioridade 1: Foto que puxamos do Banco. Prioridade 2: Google.
         const photoToShow = tempAvatarBase64 || currentUser.photoURL;
-
         if (photoToShow) {
             const settingsAvatar = document.getElementById("settings-avatar");
             if (settingsAvatar) {
@@ -587,6 +611,21 @@ function loadSettingsInputs() {
                 document.getElementById("settings-avatar-fallback").classList.add("hidden");
             }
         }
+    }
+
+    // 3. Preenche Dados Físicos (NOVO)
+    if (globalProfileData) {
+        const ageEl = document.getElementById("profile-age");
+        const genderEl = document.getElementById("profile-gender");
+        const weightEl = document.getElementById("profile-weight");
+        const heightEl = document.getElementById("profile-height");
+
+        if (ageEl && globalProfileData.age) ageEl.value = globalProfileData.age;
+        if (genderEl && globalProfileData.gender) genderEl.value = globalProfileData.gender;
+        if (weightEl && globalProfileData.weight) weightEl.value = globalProfileData.weight;
+        if (heightEl && globalProfileData.height) heightEl.value = globalProfileData.height;
+
+        window.calculateIMC(); // Chama o cálculo visual do card
     }
 }
 
