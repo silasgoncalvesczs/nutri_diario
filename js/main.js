@@ -11,6 +11,7 @@ let lastCalculatedTotals = null;
 let globalMeals = [];
 let globalGoals = { calories: 2000, protein: 150, carbs: 200, fats: 70, fibers: 30 };
 let historyChart = null;
+let currentDashboardDate = new Date();
 
 /* ============================================================
    EXPOSIÇÃO DE FUNÇÕES AO WINDOW (Para o HTML conseguir clicar)
@@ -301,6 +302,34 @@ window.saveProfile = async () => {
     }
 };
 
+window.changeDashboardDate = (offset) => {
+    currentDashboardDate.setDate(currentDashboardDate.getDate() + offset);
+    updateDashboard();
+};
+
+window.generateAITip = async () => {
+    const tipText = document.getElementById("ai-tip-text");
+    if (!tipText) return;
+
+    // Pega os valores atuais da tela
+    const currentMacros = {
+        calories: safeParseFloat(document.getElementById("dashboard-cals").innerText),
+        protein: safeParseFloat(document.getElementById("dashboard-protein").innerText),
+        carbs: safeParseFloat(document.getElementById("dashboard-carbs").innerText),
+        fats: safeParseFloat(document.getElementById("dashboard-fats").innerText)
+    };
+
+    tipText.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Analisando seus macros...';
+
+    try {
+        const dica = await API.getAITipFromAPI(currentMacros, globalGoals);
+        tipText.innerHTML = dica;
+    } catch (error) {
+        console.error(error);
+        tipText.innerHTML = "Ops! A IA precisou de uma pausa. Tente novamente mais tarde.";
+    }
+};
+
 /* ============================================================
    LÓGICA INTERNA E INICIALIZAÇÃO
    ============================================================ */
@@ -383,14 +412,32 @@ async function loadDataFromCloud() {
 }
 
 function updateDashboard() {
-    const todayStr = new Date().toLocaleDateString("pt-BR");
-    const todaysMeals = globalMeals.filter(m => {
+    const today = new Date();
+    const dateStr = currentDashboardDate.toLocaleDateString("pt-BR");
+    const todayStr = today.toLocaleDateString("pt-BR");
+
+    // 1. Lógica do rótulo da data (Hoje, Ontem, ou DD/MM)
+    let label = "Hoje";
+    if (dateStr !== todayStr) {
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (dateStr === yesterday.toLocaleDateString("pt-BR")) {
+            label = "Ontem";
+        } else {
+            label = dateStr.substring(0, 5); // Mostra apenas dia e mês (ex: 20/02)
+        }
+    }
+    safeSetText("dashboard-date-display", label);
+
+    // 2. Filtra as refeições do dia SELECIONADO (não mais apenas 'hoje')
+    const targetMeals = globalMeals.filter(m => {
         const dateToCheck = m.timestamp ? new Date(m.timestamp) : new Date();
-        return dateToCheck.toLocaleDateString("pt-BR") === todayStr;
+        return dateToCheck.toLocaleDateString("pt-BR") === dateStr;
     });
 
+    // 3. Soma os macros (o resto da função continua igual)
     let dailyTotals = { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-    todaysMeals.forEach(m => {
+    targetMeals.forEach(m => {
         if (m.totals) {
             dailyTotals.calories += safeParseFloat(m.totals.calories);
             dailyTotals.protein += safeParseFloat(m.totals.protein);
@@ -427,26 +474,55 @@ function updateMacroCard(elementId, current, goal) {
 function loadHistory() {
     const container = document.getElementById("history-list");
     if (globalMeals.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-400 py-4">Histórico vazio.</p>';
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 opacity-50">
+                <i class="fas fa-utensils text-4xl mb-3 text-gray-300 dark:text-gray-600"></i>
+                <p class="text-center text-gray-400 dark:text-gray-500 font-medium">Histórico vazio.</p>
+            </div>`;
         updateChart([]);
         return;
     }
 
     container.innerHTML = globalMeals.map(m => `
-        <div class="p-4 bg-white rounded-xl border border-gray-100 shadow-sm mb-3 dark:bg-dark-surface dark:border-dark-border">
-            <div class="flex justify-between mb-2">
-                <strong class="text-gray-800 dark:text-white">${m.date}</strong>
-                <button onclick="deleteMeal('${m.id}')" class="text-xs text-red-400 hover:text-red-600">Excluir</button>
+        <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 dark:bg-dark-surface dark:border-dark-border transition-colors duration-300">
+            
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary-50 dark:bg-primary-900/20 p-2.5 rounded-xl text-primary-600 dark:text-primary-400">
+                        <i class="fas fa-clock text-sm"></i>
+                    </div>
+                    <strong class="text-gray-800 dark:text-white font-bold tracking-wide">${m.date}</strong>
+                </div>
+                <button onclick="deleteMeal('${m.id}')" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 hover:bg-red-50 dark:bg-dark-bg dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">
+                    Excluir
+                </button>
             </div>
-            <div class="text-xs text-gray-500 mb-2 italic truncate dark:text-gray-400">
-                ${m.ingredients.map(i => `${i.quantity}${i.unit} ${i.name}`).join(", ")}
+            
+            <div class="text-sm text-gray-500 mb-5 dark:text-gray-400 px-1 leading-relaxed border-l-2 border-gray-100 dark:border-dark-border pl-3">
+                ${m.ingredients.map(i => `<span class="font-medium text-gray-600 dark:text-gray-300">${i.quantity}${i.unit}</span> ${i.name}`).join(" &bull; ")}
             </div>
-            <div class="grid grid-cols-5 gap-1 text-center text-xs">
-                <div class="bg-green-50 rounded p-1 dark:bg-green-900/30 text-green-700 dark:text-green-400"><b>${Math.round(safeParseFloat(m.totals.calories))}</b> Kcal</div>
-                <div class="bg-blue-50 rounded p-1 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"><b>${Math.round(safeParseFloat(m.totals.protein))}</b> Prot</div>
-                <div class="bg-orange-50 rounded p-1 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"><b>${Math.round(safeParseFloat(m.totals.carbs))}</b> Carb</div>
-                <div class="bg-yellow-50 rounded p-1 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"><b>${Math.round(safeParseFloat(m.totals.fats))}</b> Gord</div>
-                <div class="bg-gray-50 rounded p-1 dark:bg-gray-700 text-gray-700 dark:text-gray-300"><b>${Math.round(safeParseFloat(m.totals.fiber))}</b> Fib</div>
+            
+            <div class="grid grid-cols-5 gap-2">
+                <div class="flex flex-col items-center justify-center bg-gray-50 dark:bg-dark-bg py-2 rounded-xl border border-gray-100 dark:border-dark-border">
+                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Kcal</span>
+                    <span class="font-extrabold text-gray-700 dark:text-gray-200">${Math.round(safeParseFloat(m.totals.calories))}</span>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-blue-50/50 dark:bg-blue-900/10 py-2 rounded-xl border border-blue-100/50 dark:border-blue-900/30">
+                    <span class="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-0.5">Prot</span>
+                    <span class="font-extrabold text-blue-700 dark:text-blue-400">${Math.round(safeParseFloat(m.totals.protein))}g</span>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-orange-50/50 dark:bg-orange-900/10 py-2 rounded-xl border border-orange-100/50 dark:border-orange-900/30">
+                    <span class="text-[10px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">Carb</span>
+                    <span class="font-extrabold text-orange-700 dark:text-orange-400">${Math.round(safeParseFloat(m.totals.carbs))}g</span>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-yellow-50/50 dark:bg-yellow-900/10 py-2 rounded-xl border border-yellow-100/50 dark:border-yellow-900/30">
+                    <span class="text-[10px] text-yellow-600 font-bold uppercase tracking-wider mb-0.5">Gord</span>
+                    <span class="font-extrabold text-yellow-700 dark:text-yellow-500">${Math.round(safeParseFloat(m.totals.fats))}g</span>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-green-50/50 dark:bg-green-900/10 py-2 rounded-xl border border-green-100/50 dark:border-green-900/30">
+                    <span class="text-[10px] text-green-500 font-bold uppercase tracking-wider mb-0.5">Fib</span>
+                    <span class="font-extrabold text-green-700 dark:text-green-400">${Math.round(safeParseFloat(m.totals.fiber))}g</span>
+                </div>
             </div>
         </div>
     `).join("");

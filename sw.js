@@ -3,8 +3,7 @@
    Cache atualizado para a nova arquitetura modular
    ============================================================ */
 
-// Mude apenas a primeira linha do seu sw.js para v3:
-const CACHE_NAME = "nutridiario-cache-v3";
+const CACHE_NAME = "nutridiario-cache-v5";
 
 const FILES_TO_CACHE = [
   "./",

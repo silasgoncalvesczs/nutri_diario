@@ -24,3 +24,22 @@ export async function calculateNutritionFromAPI(ingredientsList) {
 
     return JSON.parse(jsonStr);
 }
+
+// Busca a dica do Nutricionista IA
+export async function getAITipFromAPI(macros, goals) {
+    // Monta a mensagem que será enviada para a IA
+    const prompt = `Consumi hoje: ${macros.calories}kcal, ${macros.protein}g prot, ${macros.carbs}g carb, ${macros.fats}g gordura. 
+    Minha meta é: ${goals.calories}kcal, ${goals.protein}g prot, ${goals.carbs}g carb, ${goals.fats}g gordura.`;
+
+    const response = await fetch("https://nutri-diario.vercel.app/api/tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error?.message || "Erro na IA");
+
+    return data.choices[0].message.content;
+}
